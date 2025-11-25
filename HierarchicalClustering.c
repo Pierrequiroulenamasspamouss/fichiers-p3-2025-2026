@@ -2,15 +2,25 @@
 #include <stdlib.h>
 #include "HierarchicalClustering.h"
 
-typedef struct Hclust_t Hclust;
+typedef struct Hclust_t 
+{
+    int test;
+}Hclust;
 
-Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char *, void *), void *distFnParams);
+Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char *, void *), void *distFnParams){
+    return 0;
+}
 
-List *hclustGetClustersDist(Hclust *hc, double distanceThreshold);
+List *hclustGetClustersDist(Hclust *hc, double distanceThreshold){      
+}
 
-List *hclustGetClustersK(Hclust *hc, int k);
+List *hclustGetClustersK(Hclust *hc, int k){
 
-BTree *hclustGetTree(Hclust *hc);
+}
+
+BTree *hclustGetTree(Hclust *hc){
+}
+
 
 void hclustFree(Hclust *hc){
     free(hc);

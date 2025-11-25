@@ -7,4 +7,6 @@ double phyloDNADistance(char *dna1, char *dna2){
 }
 
 
-Hclust *phyloTreeCreate(char *filename);
+Hclust *phyloTreeCreate(char *filename){
+    return 0;
+}
