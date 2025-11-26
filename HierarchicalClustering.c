@@ -53,7 +53,7 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
     // initialisation des clusters ( chaque objet est son propre cluster )
     for (int i = 0; i < n; i++)
     {
-        char *obj = (char *)llGet(objects, i);
+        char *obj = (char *)llData(objects[i]); // 
         BTree *tree = btCreate();
         btCreateRoot(tree, obj);
         // dicInsert(dico_clusters, obj, tree);
@@ -61,11 +61,11 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
     // fusion des clusters( tant qu'il n'y a pas k=1 cluster )
     while (llSize(paires) > 0)
     {
-        Paire *minPair = (Paire *)llGet(paires, 0); // paire la plus proche
+        Paire *minPair = (Paire *)llData(paires, 0); // paire la plus proche
 
         // trouver les sous-arbres ( aka clusters ) des objets
-        BTree *T_o1 = dicGet(dico_clusters, minPair->o1);
-        BTree *T_o2 = dicGet(dico_clusters, minPair->o2);
+        BTree *T_o1 = dictSearch(dico_clusters, minPair->o1);
+        BTree *T_o2 = dictSearch(dico_clusters, minPair->o2);
 
         if (!T_o1 || !T_o2 || T_o1 == T_o2)
         {
@@ -176,17 +176,11 @@ void hclustFree(Hclust *hc)
     free(hc);
     return;
 }
-static int hclustDepthRec(Hclust *hc, int depth)
-{
 
-    // TODO
-    return 0;
-}
 int hclustDepth(Hclust *hc)
 {
-    // TODO
-    hclustDepthRec(hc, 0);
-    return 0;
+    // TODO 
+    return 0 ;
 }
 
 int hclustNbLeaves(Hclust *hc)
@@ -194,8 +188,19 @@ int hclustNbLeaves(Hclust *hc)
     return hc->nombre_objets; // note : lors de la fabrication de hc on devra incrémenter nombre_objets
 }
 
+static int hclustPrintTreeRec(FILE *fp, Hclust *hc)
+{
+    if (!hc|| hc == NULL)return;
+    hclustPrintTreeRec(fp,hc);
+    fprintf(fp, "hello");
+}
 void hclustPrintTree(FILE *fp, Hclust *hc)
 {
-    // TODO
+    char s = "a";
+    fprintf(fp,"%d\n",s);
+
+
+    // etape 1 ) commencer par une feuille -> prendre parent et le rajouter. 
+    
     return;
 }
