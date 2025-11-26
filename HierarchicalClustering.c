@@ -176,17 +176,28 @@ void hclustFree(Hclust *hc)
     free(hc);
     return;
 }
-static int hclustDepthRec(Hclust *hc, int depth)
+//ma modification
+static int hclustDepthRec(Hclust *hc, int depth ,BTNode node)
 {
 
-    // TODO
+    BTNode left = btLeft(hc->dendrogramme, node);
+    BTNode right = btRight(hc->dendrogramme, node);
+    if(!left&&!right)
+        return depth;
+    hclustDepthRec(hc, depth+1,left);
+    hclustDepthRec(hc, depth+1,right);
+
+
     return 0;
 }
 int hclustDepth(Hclust *hc)
 {
-    // TODO
-    hclustDepthRec(hc, 0);
-    return 0;
+    int depth = 0;
+    BTNode *root = btRoot(hc->dendrogramme);
+    if(!root)
+        return depth;
+    depth=hclustDepthRec(hc, depth+1,root);
+    return depth;
 }
 
 int hclustNbLeaves(Hclust *hc)
@@ -199,3 +210,4 @@ void hclustPrintTree(FILE *fp, Hclust *hc)
     // TODO
     return;
 }
+
