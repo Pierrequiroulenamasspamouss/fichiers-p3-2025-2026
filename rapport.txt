@@ -1,0 +1,65 @@
+Ne modifiez pas ce fichier (même cette ligne) sauf pour y ajouter vos réponses
+aux endroits marqués de "..."
+
+Règles concernant le plagiat:
+============================= 
+
+En soumettant votre projet et ce rapport, vous attestez que vous êtes les uniques auteurs 
+du code soumis et que vous avez respecté les régles en matière de plagiat relatives à ce 
+cours, indiquées aux slides 9 et 10 du cours théorique (pas d'échange de codes entre groupes,
+pas d'appel à un tiers, pas d'utilisation d'outils d'intelligence artificielle tels que
+ChatGPT ou Copilot, etc.).
+
+
+Informations etudiants:
+=======================
+
+Etudiant 1: 
+Matricule: s2404824
+Nom: Sluse
+Prénom: Pierre
+Contribution au projet: btMapLeaves(), btMergeTrees(),hclustGetClustersDist+rec(), hclustBuildTree(),structs Hclust + paire -> 30%
+
+Etudiant 2: 
+Matricule: sxxxxxxx
+Nom: Vasquelez
+Prénom: Tanguy
+Contribution au projet: 0 %
+
+@Tanguy, quelques explications de ce que j'ai fait : Pseudocode -> code réel petit à petit, il y a des TODO à faire , et les lignes qui vont pas compiler sont 
+en commentaires (//)
+Les objets en listes liée (List):
+    -objets de départ (les noms des espèces d'ADN ou des points)
+    -résultats de clustering (une liste de listes de noms d'objets pour hclustGetClustersDist et hclustGetClustersK)
+    - liste pour des petits trucs
+
+Les objets en BTree ( 2 types : nodes, les éléments de l'arbre individuels, et les arbres)
+    NODES
+        - Feuille: objet unique (une espèce, un point) qui n'a pas été fusionné. La donnée stockée est le nom de l'objet (une chaîne de caractères).
+        - Noeud autre: fusion de ses deux sous-arbres (ses enfants). La donnée stockée est un pointeur vers un double contenant la distance entre les deux clusters "fusionnés"
+        ex : 
+        A - B - C
+            |
+            D
+        on a C et D qui sont des noeuds ( plus spécifiquement des feuilles) et A et B des noeuds autres 
+    TREES (Clusters):
+        Au début, chaque objet est son propre cluster, représenté par un binaryTree de 1 élément.
+        Lors de la fusion, la fonction btMergeTrees crée une nouvelle racine au-dessus des deux arbres (clusters) fusionnés, liant le nouveau cluster au dictionnaire.
+Les Dict (dans hclustBuildTree) -> Table de hachage
+    - Il maintient un suivi constant du cluster auquel appartient chaque objet initial
+    - Clé: Le nom de l'objet (e.g., 'a', 'b')
+    - Valeur: Le sous-arbre (BTree) qui représente le cluster auquel cet objet appartient à l'étape courante
+    - Cela permet de vérifier si deux objets (o1 et o2) appartiennent au même cluster (via la fonction dictSearch et comparaison des sous-arbres)
+    - Lors d'une fusion : on parcourt les feuilles du plus petit arbre fusionné (btMapLeaves) et on met à jour la valeur dans le dictionnaire pour que ces feuilles pointent vers la racine du nouveau cluster fusionné
+
+
+ETAPES DE CALCUL :
+    - calculer toutes les distances possibles (o1, o2) puis les trier par ordre croissant
+    - créer N arbres (clusters) de taille 1 (une feuille) et on va les insérer dans le Dictionnaire
+    - Fusion (Itération): prendre la paire d'objets (o1, o2) avec la plus petite distance non encore traitée
+      Utiliser le Dictionnaire(table de hachage) pour trouver les clusters T1 et T2 associés à o1 et o2.
+      Si T1 != T2, vous les fusionner en créant une nouvelle racine (distance) dans le plus grand des deux arbres (btMergeTrees)
+      Vous utiliser btMapLeaves pour parcourir les feuilles du plus petit arbre et mettre à jour le Dictionnaire pour qu'elles pointent vers la nouvelle racine (le nouveau cluster fusionné)
+    - Lorsque toutes les fusions sont faites (k=1), l'arbre binaire final (le dendrogramme) est stocké dans la structure Hclust
+
+si tu te souviens c'était grosso modo ça, on fusionne et on réduit jusqu'à n'avoir qu'1 node 
