@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "BTree.h"
+#include "LinkedList.h"
 
 struct BTNode_t
 {
@@ -157,10 +158,24 @@ int btHasRight(BTree *tree, BTNode *n)
 
 void btMapLeaves(BTree *tree, BTNode *n, void (*f)(void *data, void *fparams), void *fparams)
 {
-
+  // il y a un souci avec N
+  if (!n)
+    return;
+  if (!n->left && !n->right)
+    f(n, fparams);
+  else
+  {
+    btMapLeaves(tree, n->left, f, fparams);
+    btMapLeaves(tree, n->right, f, fparams);
+  }
 }
 
 void btMergeTrees(BTree *lefttree, BTree *righttree, void *data)
-{
 
+{
+  BTNode *newRac = createNode(data);
+  newRac->left = lefttree->root;
+  newRac->right = righttree->root;
+  lefttree->root = newRac;
+  btFree(righttree); // on a pris celui de droite à conserver, j'ai fait ça arbitrairement
 }

@@ -2,40 +2,188 @@
 #include <stdlib.h>
 #include "HierarchicalClustering.h"
 
-typedef struct Hclust_t 
+typedef struct Hclust_t
 {
-    int test;
-}Hclust;
+    BTree *dendrogramme;
+    List *liste_distances_fusion; // à voir si on s'en sert
+    int nombre_objets;            // N
+} Hclust;
+typedef struct
+{
+    char *o1;
+    char *o2;
+    int dist; // pourrait être double
 
-Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char *, void *), void *distFnParams){
-    return 0;
+} Paire;
+
+Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char *, void *), void *distFnParams)
+{
+    // TODO
+    int n = llSize(objects);
+    if (n <= 1)
+        return NULL; // vide
+
+    BTree *dico_clusters = btCreate(); // ( nom_objet -> Sous-arbre du dendrogramme )
+    List *paires = llCreateEmpty();    // Liste de ( objet1, objet2, distance )
+    BTree *T_big;
+
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = i + 1; j < n; j++)
+        {
+            char *o1 = (char *)llGet(objects, i);
+            char *o2 = (char *)llGet(objects, j);
+            double dist = distFn(o1, o2, distFnParams);
+
+            Paire *p = malloc(sizeof(Paire));
+            p->o1 = o1;
+            p->o2 = o2;
+            p->dist = dist;
+            llInsertLast(paires, p);
+        }
+    }
+    // tri des paires ( important pour efficacité je crois )
+
+    // llSort(paires); // faire pour tous les éléments de paires ( le faire d'une façon smart)
+
+    // initialisation des clusters ( chaque objet est son propre cluster )
+    for (int i = 0; i < n; i++)
+    {
+        char *obj = (char *)llGet(objects, i);
+        BTree *tree = btCreate();
+        btCreateRoot(tree, obj);
+        // dicInsert(dico_clusters, obj, tree);
+    }
+    // fusion des clusters( tant qu'il n'y a pas k=1 cluster )
+    while (llSize(paires) > 0)
+    {
+        Paire *minPair = (Paire *)llGet(paires, 0); // paire la plus proche
+
+        // trouver les sous-arbres ( aka clusters ) des objets
+        BTree *T_o1 = dicGet(dico_clusters, minPair->o1);
+        BTree *T_o2 = dicGet(dico_clusters, minPair->o2);
+
+        if (!T_o1 || !T_o2 || T_o1 == T_o2)
+        {
+            llRemoveFirst(paires);
+            continue;
+        }
+        // un ordre précis avec T_big et T_small pour optimiser
+        T_big = (btSize(T_o1) >= btSize(T_o2)) ? T_o1 : T_o2; // piti souci ici je crois ,  je suis pas sûr de la formulation avec l'operateur ?
+        
+        BTree *T_small = (T_big == T_o1) ? T_o2 : T_o1;
+
+        // fusionner
+        btMergeTrees(T_big, T_small, minPair->dist); // 'dist' est le nouveau node dedans, possible mene a segfault
+
+        // mettre à jour le dictionnaire
+        btMapLeaves(T_big, btRoot(T_small), updateClusterDict(), dico_clusters); // NB updateClusterDict n'est pas défini
+
+        // supprimer la paire traitee
+        llRemoveFirst(paires);
+
+        // verifier si on a atteint 1 seul sous-arbre
+        if (llSize(dico_clusters) == 1)
+            break;
+    }
+
+    // creer la structure Hclust a retourner
+    Hclust *hc = malloc(sizeof(Hclust));
+    hc->dendrogramme = T_big; // L'arbre final
+    hc->nombre_objets = n;
+    hc->liste_distances_fusion = paires;
+    dicFree(dico_clusters);
+    return hc;
 }
 
-List *hclustGetClustersDist(Hclust *hc, double distanceThreshold){      
+List *hclustGetClustersDist(Hclust *hc, double distanceThreshold)
+{
+
+    if (!hc || !hc->dendrogramme)
+        return NULL;
+
+    List *clustersList = llCreateEmpty();
+    hclustGetClustersDistRec(hc->dendrogramme, btRoot(hc->dendrogramme),
+                             distanceThreshold, clustersList);
+    return clustersList;
+}
+static void hclustGetClustersDistRec(BTree *dendrogramme, BTNode *node,
+                                     double distanceThreshold, List *clustersList)
+{ // TODO
+
+    if (!node)
+        return; // safety first
+
+    double node_distance = (double)(uintptr_t)btGetData(dendrogramme, node);
+
+    if (btIsExternal(dendrogramme, node))
+    {
+        // rajouter si c'est une feuille
+        llInsertLast(clustersList, btGetData(dendrogramme, node));
+        return;
+    }
+
+    // si la distance est <= au seuil --> c'est un cluster final
+    if (node_distance <= distanceThreshold)
+    {
+        // lister toutes les feuilles de ce sous-arbre
+        List *cluster = llCreateEmpty();
+        collectLeaves(dendrogramme, node, cluster); // TODO : fausse fonction
+        llInsertLast(clustersList, cluster); // ajouter le cluster
+        return;
+    }
+    // Sinon, continuer la descente recursivement
+    if (btHasLeft(dendrogramme, node))
+        hclustGetClustersDistRec(dendrogramme, btLeft(dendrogramme, node),
+                                 distanceThreshold, clustersList);
+    if (btHasRight(dendrogramme, node))
+        hclustGetClustersDistRec(dendrogramme, btRight(dendrogramme, node),
+                                 distanceThreshold, clustersList);
 }
 
-List *hclustGetClustersK(Hclust *hc, int k){
-
+static void collectLeaves(BTree *tree, BTNode *node, List *leaves)
+{
+    // TODO
+    return;
 }
 
-BTree *hclustGetTree(Hclust *hc){
+List *hclustGetClustersK(Hclust *hc, int k)
+{
+    // TODO
 }
 
+BTree *hclustGetTree(Hclust *hc)
+{
+    return hc->dendrogramme;
+}
 
-void hclustFree(Hclust *hc){
+void hclustFree(Hclust *hc)
+{
+
+    btFree(hc->dendrogramme);
     free(hc);
     return;
 }
 
-int hclustDepth(Hclust *hc){
-    return 0 ;
+int hclustDepth(Hclust *hc)
+{
+    // TODO
+    hclustDepthRec(hc, 0);
+    return 0;
 }
-
-int hclustNbLeaves(Hclust *hc){
+static int hclustDepthRec(Hclust *hc, int depth)
+{
+    // TODO
     return 0;
 }
 
-void hclustPrintTree(FILE *fp, Hclust *hc){
-    return;
+int hclustNbLeaves(Hclust *hc)
+{
+    return hc->nombre_objets; // note : lors de la fabrication de hc on devra incrémenter nombre_objets
 }
 
+void hclustPrintTree(FILE *fp, Hclust *hc)
+{
+    // TODO
+    return;
+}

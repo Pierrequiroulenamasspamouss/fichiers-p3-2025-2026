@@ -3,7 +3,7 @@
 #include "Phylogenetic.h"
 
 double phyloDNADistance(char *dna1, char *dna2){
-    return 1;
+    return 0;
 }
 
 
