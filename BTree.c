@@ -158,7 +158,7 @@ int btHasRight(BTree *tree, BTNode *n)
 
 void btMapLeaves(BTree *tree, BTNode *n, void (*f)(void *data, void *fparams), void *fparams)
 {
-  // il y a un souci avec N
+  // s'il y a un souci avec N
   if (!n)
     return;
   if (!n->left && !n->right)
