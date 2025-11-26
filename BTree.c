@@ -150,6 +150,7 @@ int btHasLeft(BTree *tree, BTNode *n)
 
 int btHasRight(BTree *tree, BTNode *n)
 {
+  
   (void)(tree);
   return (n->right != NULL);
 }
