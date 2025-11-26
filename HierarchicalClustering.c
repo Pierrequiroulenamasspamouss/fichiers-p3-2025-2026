@@ -122,7 +122,7 @@ static void hclustGetClustersDistRec(BTree *dendrogramme, BTNode *node,
     if (!node)
         return; // safety first
 
-    double node_distance = (double)(uintptr_t)btGetData(dendrogramme, node);
+    double node_distance = (double)(intptr_t)btGetData(dendrogramme, node);
 
     if (btIsExternal(dendrogramme, node))
     {
@@ -172,18 +172,19 @@ void hclustFree(Hclust *hc)
     free(hc);
     return;
 }
-
+static int hclustDepthRec(Hclust *hc, int depth)
+{
+    // TODO
+    return 0;
+}
 int hclustDepth(Hclust *hc)
 {
     // TODO
     hclustDepthRec(hc, 0);
     return 0;
 }
-static int hclustDepthRec(Hclust *hc, int depth)
-{
-    // TODO
-    return 0;
-}
+
+
 
 int hclustNbLeaves(Hclust *hc)
 {
