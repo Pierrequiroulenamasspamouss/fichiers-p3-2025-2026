@@ -26,6 +26,7 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
     BTree *dico_clusters = btCreate(); // ( nom_objet -> Sous-arbre du dendrogramme )
     List *paires = llCreateEmpty();    // Liste de ( objet1, objet2, distance )
     BTree *T_big;
+    BTree *T_small;
 
     for (int i = 0; i < n; i++)
     {
@@ -69,9 +70,16 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
             continue;
         }
         // un ordre précis avec T_big et T_small pour optimiser
-        T_big = (btSize(T_o1) >= btSize(T_o2)) ? T_o1 : T_o2; // piti souci ici je crois ,  je suis pas sûr de la formulation avec l'operateur ?
-        
-        BTree *T_small = (T_big == T_o1) ? T_o2 : T_o1;
+        if (btSize(T_o1) >= btSize(T_o2))
+        {
+            T_big = T_o1;
+            T_small = T_o2;
+        }
+        else
+        {
+            T_big = T_o2;
+            T_small = T_o1;
+        };
 
         // fusionner
         btMergeTrees(T_big, T_small, minPair->dist); // 'dist' est le nouveau node dedans, possible mene a segfault
@@ -129,7 +137,7 @@ static void hclustGetClustersDistRec(BTree *dendrogramme, BTNode *node,
         // lister toutes les feuilles de ce sous-arbre
         List *cluster = llCreateEmpty();
         collectLeaves(dendrogramme, node, cluster); // TODO : fausse fonction
-        llInsertLast(clustersList, cluster); // ajouter le cluster
+        llInsertLast(clustersList, cluster);        // ajouter le cluster
         return;
     }
     // Sinon, continuer la descente recursivement
