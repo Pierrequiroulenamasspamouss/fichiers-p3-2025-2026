@@ -150,7 +150,7 @@ int btHasLeft(BTree *tree, BTNode *n)
 
 int btHasRight(BTree *tree, BTNode *n)
 {
-  
+
   (void)(tree);
   return (n->right != NULL);
 }
@@ -178,5 +178,5 @@ void btMergeTrees(BTree *lefttree, BTree *righttree, void *data)
   newRac->left = lefttree->root;
   newRac->right = righttree->root;
   lefttree->root = newRac;
-  btFree(righttree); // on a pris celui de droite à conserver, j'ai fait ça arbitrairement
+  btFree(righttree); // on a libéré celui de droite
 }

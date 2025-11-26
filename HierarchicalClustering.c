@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
+
 #include "HierarchicalClustering.h"
+#include "LinkedList.h"
 
 typedef struct Hclust_t
 {
@@ -104,25 +107,20 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
     return hc;
 }
 
-List *hclustGetClustersDist(Hclust *hc, double distanceThreshold)
+static void collectLeaves(BTree *tree, BTNode *node, List *leaves)
 {
-
-    if (!hc || !hc->dendrogramme)
-        return NULL;
-
-    List *clustersList = llCreateEmpty();
-    hclustGetClustersDistRec(hc->dendrogramme, btRoot(hc->dendrogramme),
-                             distanceThreshold, clustersList);
-    return clustersList;
+    // TODO
+    return;
 }
-static void hclustGetClustersDistRec(BTree *dendrogramme, BTNode *node,
-                                     double distanceThreshold, List *clustersList)
-{ // TODO
+
+static void hclustGetClustersDistRec(BTree *dendrogramme, BTNode *node, double distanceThreshold, List *clustersList)
+{
+    // TODO
 
     if (!node)
         return; // safety first
 
-    double node_distance = (double)(intptr_t)btGetData(dendrogramme, node);
+    double node_distance = (double)(uintptr_t)btGetData(dendrogramme, node);
 
     if (btIsExternal(dendrogramme, node))
     {
@@ -149,10 +147,16 @@ static void hclustGetClustersDistRec(BTree *dendrogramme, BTNode *node,
                                  distanceThreshold, clustersList);
 }
 
-static void collectLeaves(BTree *tree, BTNode *node, List *leaves)
+List *hclustGetClustersDist(Hclust *hc, double distanceThreshold)
 {
-    // TODO
-    return;
+
+    if (!hc || !hc->dendrogramme)
+        return NULL;
+
+    List *clustersList = llCreateEmpty();
+    hclustGetClustersDistRec(hc->dendrogramme, btRoot(hc->dendrogramme),
+                             distanceThreshold, clustersList);
+    return clustersList;
 }
 
 List *hclustGetClustersK(Hclust *hc, int k)
@@ -174,6 +178,7 @@ void hclustFree(Hclust *hc)
 }
 static int hclustDepthRec(Hclust *hc, int depth)
 {
+
     // TODO
     return 0;
 }
@@ -183,8 +188,6 @@ int hclustDepth(Hclust *hc)
     hclustDepthRec(hc, 0);
     return 0;
 }
-
-
 
 int hclustNbLeaves(Hclust *hc)
 {
