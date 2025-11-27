@@ -177,18 +177,21 @@ void hclustFree(Hclust *hc)
     return;
 }
 //ma modification
-static int hclustDepthRec(Hclust *hc, int depth ,BTNode node)
+static int hclustRec(Hclust *hc, int *nbleaves ,BTNode node)
 {
 
     BTNode left = btLeft(hc->dendrogramme, node);
     BTNode right = btRight(hc->dendrogramme, node);
-    if(!left&&!right)
-        return depth;
-    hclustDepthRec(hc, depth+1,left);
-    hclustDepthRec(hc, depth+1,right);
+    if(!left&&!right){
+        nbleaves++;
+        return 1;
+    }
+    int t_left=hclustRec(hc, nbleaves,left);
+    int t_right hclustRec(hc, nbleaves,right);
 
-
-    return 0;
+    if(t_left<t_right)
+        return t_right+1;
+    return t_left+1;
 }
 int hclustDepth(Hclust *hc)
 {
@@ -196,10 +199,12 @@ int hclustDepth(Hclust *hc)
     BTNode *root = btRoot(hc->dendrogramme);
     if(!root)
         return depth;
-    depth=hclustDepthRec(hc, depth+1,root);
+    int *nbleaves = 0;
+    depth=hclustRec(hc,nbleaves,root);
     return depth;
 }
 
+// normalement hclustrec gere les nb leaves aussi j'avais pas vu que il y avais un nombre d'objet
 int hclustNbLeaves(Hclust *hc)
 {
     return hc->nombre_objets; // note : lors de la fabrication de hc on devra incrémenter nombre_objets
@@ -221,4 +226,5 @@ void hclustPrintTree(FILE *fp, Hclust *hc)
     
     return;
 }
+
 
