@@ -15,7 +15,7 @@ typedef struct
 {
     char *o1;
     char *o2;
-    int dist; // pourrait être double
+    double dist; // mis en double car c'est mieux. est ce qu'on peut mettre unsigned ? 
 
 } Paire;
 
@@ -53,7 +53,7 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
     // initialisation des clusters ( chaque objet est son propre cluster )
     for (int i = 0; i < n; i++)
     {
-        char *obj = (char *)llData(objects[i]); // 
+        char *obj = (char *)llData(objects); // souci je veux la data de l'objet i mais je donne tous les objets
         BTree *tree = btCreate();
         btCreateRoot(tree, obj);
         // dicInsert(dico_clusters, obj, tree);
@@ -61,7 +61,7 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
     // fusion des clusters( tant qu'il n'y a pas k=1 cluster )
     while (llSize(paires) > 0)
     {
-        Paire *minPair = (Paire *)llData(paires, 0); // paire la plus proche
+        Paire *minPair = (Paire *)llData(paires); // paire la plus proche distance zéro je crois ? 
 
         // trouver les sous-arbres ( aka clusters ) des objets
         BTree *T_o1 = dictSearch(dico_clusters, minPair->o1);
@@ -84,8 +84,11 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
             T_small = T_o1;
         };
 
+        double *distPtr = malloc(sizeof(double));
+
+        *distPtr = minPair->dist;
         // fusionner
-        btMergeTrees(T_big, T_small, minPair->dist); // 'dist' est le nouveau node dedans, possible mene a segfault
+        btMergeTrees(T_big, T_small, distPtr); // j'ai changé avant ça menait a un segfault si on mettait la distance en brut
 
         // mettre à jour le dictionnaire
         btMapLeaves(T_big, btRoot(T_small), updateClusterDict(), dico_clusters); // NB updateClusterDict n'est pas défini
@@ -109,15 +112,27 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
 
 static void collectLeaves(BTree *tree, BTNode *node, List *leaves)
 {
-    // TODO
-    return;
+    if (!node || !tree || !leaves)
+        return; // safety
+
+    if (btIsExternal(tree, node))
+    {
+        // c'est une feuille, on ajoute le nom de l'objet
+        llInsertLast(leaves, btGetData(tree, node));
+    }
+    else
+    {
+        // c'est un noeud interne, on descend
+        collectLeaves(tree, btLeft(tree, node), leaves);
+        collectLeaves(tree, btRight(tree, node), leaves);
+    }
 }
 
 static void hclustGetClustersDistRec(BTree *dendrogramme, BTNode *node, double distanceThreshold, List *clustersList)
 {
     // TODO
 
-    if (!node)
+    if (!node || dendrogramme || distanceThreshold || clustersList)
         return; // safety first
 
     double node_distance = (double)(uintptr_t)btGetData(dendrogramme, node);
@@ -161,7 +176,27 @@ List *hclustGetClustersDist(Hclust *hc, double distanceThreshold)
 
 List *hclustGetClustersK(Hclust *hc, int k)
 {
+    List *clustersNodes = llCreateEmpty();
+    llInsertFirst(clustersNodes, btRoot(hc->dendrogramme)); // on commence avec la racine (1 cluster)
     // TODO
+    BTNode *maxNode;
+    while (llSize(clustersNodes) < k)
+    {
+        // on cherche dans la liste le cluster qui a la plus grande distance ( le plus haut).
+        maxNode = "cluster1dist">"cluster2dist" ? "cluster1" : "cluster2" ; // TODO  c'est du filler
+
+        // si feuille on retire
+        if ("c-est feuille")
+            break;
+
+        // on ajoute les deux children à droite et gauche de la liste
+        llInsertLast(clustersNodes, btLeft(hc->dendrogramme, maxNode));
+        llInsertLast(clustersNodes, btRight(hc->dendrogramme, maxNode));
+        // on recommence
+    }
+    // retourner le resultat sous forme de liste.
+    List *result = llCreateEmpty();
+    return result;
 }
 
 BTree *hclustGetTree(Hclust *hc)
@@ -171,32 +206,27 @@ BTree *hclustGetTree(Hclust *hc)
 
 void hclustFree(Hclust *hc)
 {
-
     btFree(hc->dendrogramme);
     free(hc);
     return;
 }
-//ma modification
-static int hclustDepthRec(Hclust *hc, int depth ,BTNode node)
+
+static int hclustDepthRec(Hclust *hc, int depth, BTNode *node) // node doit etre un pointeur
 {
+    // TODO c'est du caca ce que j'ai fait je crois 
+    BTNode *left = btLeft(hc->dendrogramme, node)   ;
+    BTNode *right = btRight(hc->dendrogramme, node) ; 
 
-    BTNode left = btLeft(hc->dendrogramme, node);
-    BTNode right = btRight(hc->dendrogramme, node);
-    if(!left&&!right)
-        return depth;
-    hclustDepthRec(hc, depth+1,left);
-    hclustDepthRec(hc, depth+1,right);
-
-
-    return 0;
+    return 1 + max(hclustDepthRec(hc,depth+1,left),hclustDepthRec(hc,depth+1,right));
 }
+
 int hclustDepth(Hclust *hc)
 {
     int depth = 0;
     BTNode *root = btRoot(hc->dendrogramme);
-    if(!root)
+    if (!root)
         return depth;
-    depth=hclustDepthRec(hc, depth+1,root);
+    depth = hclustDepthRec(hc, depth + 1, root);
     return depth;
 }
 
@@ -205,20 +235,28 @@ int hclustNbLeaves(Hclust *hc)
     return hc->nombre_objets; // note : lors de la fabrication de hc on devra incrémenter nombre_objets
 }
 
-static int hclustPrintTreeRec(FILE *fp, Hclust *hc)
+void hclustPrintTreeRec(FILE *fp, BTree *tree, BTNode *node)
 {
-    if (!hc|| hc == NULL)return;
-    hclustPrintTreeRec(fp,hc);
-    fprintf(fp, "hello");
+    if ("c-est une feuille")
+    { // TODO : trouver la condition
+        fprintf(fp, "%s", (char *)btGetData(tree, node));
+    }
+    else
+    {
+        // autre cas que juste une feuille, on met les parenthèses qu'il faut aux bons endroits
+        fprintf(fp, "(");
+        hclustPrintTreeRec(fp, tree, btLeft(tree, node));
+        fprintf(fp, ",");
+        hclustPrintTreeRec(fp, tree, btRight(tree, node));
+        fprintf(fp, ")");
+
+        // récupérer la distance
+        double *d = (double *)btGetData(tree, node); // cast en double parce que getData return void
+        fprintf(fp, ":%.3f", *d);
+    }
 }
 void hclustPrintTree(FILE *fp, Hclust *hc)
 {
-    char s = "a";
-    fprintf(fp,"%d\n",s);
-
-
-    // etape 1 ) commencer par une feuille -> prendre parent et le rajouter. 
-    
-    return;
+    hclustPrintTreeRec(fp, hc->dendrogramme, btRoot(hc->dendrogramme));
+    fprintf(fp, ";\n"); // finir le newick par un ";" dans l'exemple du cours
 }
-
