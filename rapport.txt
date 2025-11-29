@@ -21,10 +21,10 @@ Prénom: Pierre
 Contribution au projet: btMapLeaves(), btMergeTrees(),hclustGetClustersDist+rec(), hclustBuildTree(),structs Hclust + paire -> 30%
 
 Etudiant 2: 
-Matricule: sxxxxxxx
-Nom: Vasquelez
+Matricule: s2404553
+Nom: Velazquez
 Prénom: Tanguy
-Contribution au projet: 0 %
+Contribution au projet: hclustdepth/rec 0.031415926535 %
 
 @Tanguy, quelques explications de ce que j'ai fait : Pseudocode -> code réel petit à petit, il y a des TODO à faire , et les lignes qui vont pas compiler sont 
 en commentaires (//)
@@ -61,5 +61,6 @@ ETAPES DE CALCUL :
       Si T1 != T2, vous les fusionner en créant une nouvelle racine (distance) dans le plus grand des deux arbres (btMergeTrees)
       Vous utiliser btMapLeaves pour parcourir les feuilles du plus petit arbre et mettre à jour le Dictionnaire pour qu'elles pointent vers la nouvelle racine (le nouveau cluster fusionné)
     - Lorsque toutes les fusions sont faites (k=1), l'arbre binaire final (le dendrogramme) est stocké dans la structure Hclust
+
 
 si tu te souviens c'était grosso modo ça, on fusionne et on réduit jusqu'à n'avoir qu'1 node 
