@@ -238,7 +238,7 @@ static int hclustDepthRec(Hclust *hc, int depth, BTNode *node) // node doit etre
     // TODO c'est du caca ce que j'ai fait je crois 
     BTNode *left = btLeft(hc->dendrogramme, node)   ;
     BTNode *right = btRight(hc->dendrogramme, node) ; 
-    if(!left && !right)hc->nombre_feuilles++; // rajouter 1 feuille à hc
+    // if(!left && !right)hc->nombre_feuilles++; // rajouter 1 feuille à hc celle partie est inutile elle compte les feuille pour rien
     int t_left = hclustDepthRec(hc,depth+1,left);
     int t_right =  hclustDepthRec(hc,depth+1,right);
     return 1 + (t_left >=t_right ? t_left: t_right);
@@ -254,35 +254,35 @@ static int hclustDepthRec(Hclust *hc, int depth, BTNode *node) // node doit etre
 // c'est plus court, nan ? Sinon si c'est compter les feuilles, va voir hclustnbleaves
 // oui c'est bon apres je ne connait pas bien cette formulation  (t_left >=t_right ? t_left: t_right)
 
-static int hclustRec(Hclust *hc, int *nbleaves ,BTNode *node)
-{
+// static int hclustRec(Hclust *hc, int *nbleaves ,BTNode *node)
+// {
 
-    BTNode *left = btLeft(hc->dendrogramme, node);
-    BTNode *right = btRight(hc->dendrogramme, node);
-    if(!left&&!right){
-        nbleaves++;
-        hc->nombre_feuilles++ ; // pas certain de ce que je fais ici, j'avais dit que je devais rajouter à nombre_feuilles si y'a feuille
-        return 1;
-    }
-    int t_left=hclustRec(hc, nbleaves,left);
-    int t_right = hclustRec(hc, nbleaves,right);
+//     BTNode *left = btLeft(hc->dendrogramme, node);
+//     BTNode *right = btRight(hc->dendrogramme, node);
+//     if(!left&&!right){
+//         nbleaves++;
+//         hc->nombre_feuilles++ ; // pas certain de ce que je fais ici, j'avais dit que je devais rajouter à nombre_feuilles si y'a feuille
+//         return 1;
+//     }
+//     int t_left=hclustRec(hc, nbleaves,left);
+//     int t_right = hclustRec(hc, nbleaves,right);
 
-    if(t_left<t_right)
-        return t_right+1;
-    return t_left+1;
-}
+//     if(t_left<t_right)
+//         return t_right+1;
+//     return t_left+1;
+// }
 
-int hclustDepth(Hclust *hc)
-{
-    // Fonction wrapper recursive pour connaitre la profondeur de hc. C'est une recursivite de base
-    int depth = 0;
-    BTNode *root = btRoot(hc->dendrogramme);
-    if (!root)
-        return depth;
-    int *nbleaves = 0;
-    depth=hclustRec(hc,nbleaves,root);
-    return depth;
-}
+// int hclustDepth(Hclust *hc)
+// {
+//     // Fonction wrapper recursive pour connaitre la profondeur de hc. C'est une recursivite de base
+//     int depth = 0;
+//     BTNode *root = btRoot(hc->dendrogramme);
+//     if (!root)
+//         return depth;
+//     int *nbleaves = 0;
+//     depth=hclustRec(hc,nbleaves,root);
+//     return depth;
+// }
 
 int hclustNbLeaves(Hclust *hc)
 {
@@ -313,7 +313,9 @@ void hclustPrintTreeRec(FILE *fp, BTree *tree, BTNode *node)
         fprintf(fp, ":%.3f", *d);
     }
 }
-// a merde j'etait entrain de la faire , heureusement j'ai pas etye plus loin 
+// a merde j'etait entrain de la faire , heureusement j'ai pas ete plus loin 
+// normalement je pense que c'est bon j'ia un doute sur le sens de commetn va etre constuit l'arbre 
+// apres si tu connais mieux comment fprintf va ecrire dans le fichier fp
 void hclustPrintTree(FILE *fp, Hclust *hc)
 {
     hclustPrintTreeRec(fp, hc->dendrogramme, btRoot(hc->dendrogramme));
@@ -331,4 +333,5 @@ bool Isleaves(Hclust *hc,BTNode node){
     return false;
 }
 //normalement cette fonction rajoute ton booleen
+
 
