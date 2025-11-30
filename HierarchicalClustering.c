@@ -30,6 +30,16 @@ static int comparePaires(void *a, void *b)
     return 0;
 }
 
+static bool Isleaves(BTree *tree,BTNode *node){
+    // void *tree;
+    BTNode *left = btLeft(tree, node);
+    BTNode *right = btRight(tree, node);
+    if(!left&&!right)
+        return true;
+    return false;
+
+}
+
 
 Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char *, void *), void *distFnParams)
 {
@@ -122,7 +132,6 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
     dictFree(dico_clusters);
     return hc;
 }
-static bool Isleaves(Hclust *hc,BTNode node);
 
 static void collectLeaves(BTree *tree, BTNode *node, List *leaves)
 {
@@ -207,7 +216,7 @@ List *hclustGetClustersK(Hclust *hc, int k)
         maxNode = "cluster1dist">"cluster2dist" ? "cluster1" : "cluster2" ; // TODO  c'est du filler
 
         // si feuille on retire et on quitte la boucle
-        if (Isleaves(tree,node))
+        if (Isleaves(hc->dendrogramme,maxNode))
             break;
 
         // on ajoute les deux children à droite et gauche de la liste
@@ -238,7 +247,7 @@ static int hclustDepthRec(Hclust *hc, int depth, BTNode *node) // node doit etre
     // TODO c'est du caca ce que j'ai fait je crois 
     BTNode *left = btLeft(hc->dendrogramme, node)   ;
     BTNode *right = btRight(hc->dendrogramme, node) ; 
-    // if(!left && !right)hc->nombre_feuilles++; // rajouter 1 feuille à hc celle partie est inutile elle compte les feuille pour rien
+    if(!left && !right)hc->nombre_feuilles++; // rajouter 1 feuille à hc celle partie est inutile elle compte les feuille pour rien
     int t_left = hclustDepthRec(hc,depth+1,left);
     int t_right =  hclustDepthRec(hc,depth+1,right);
     return 1 + (t_left >=t_right ? t_left: t_right);
@@ -254,23 +263,23 @@ static int hclustDepthRec(Hclust *hc, int depth, BTNode *node) // node doit etre
 // c'est plus court, nan ? Sinon si c'est compter les feuilles, va voir hclustnbleaves
 // oui c'est bon apres je ne connait pas bien cette formulation  (t_left >=t_right ? t_left: t_right)
 
-// static int hclustRec(Hclust *hc, int *nbleaves ,BTNode *node)
-// {
+static int hclustRec(Hclust *hc, int *nbleaves ,BTNode *node)
+{
 
-//     BTNode *left = btLeft(hc->dendrogramme, node);
-//     BTNode *right = btRight(hc->dendrogramme, node);
-//     if(!left&&!right){
-//         nbleaves++;
-//         hc->nombre_feuilles++ ; // pas certain de ce que je fais ici, j'avais dit que je devais rajouter à nombre_feuilles si y'a feuille
-//         return 1;
-//     }
-//     int t_left=hclustRec(hc, nbleaves,left);
-//     int t_right = hclustRec(hc, nbleaves,right);
+    BTNode *left = btLeft(hc->dendrogramme, node);
+    BTNode *right = btRight(hc->dendrogramme, node);
+    if(!left&&!right){
+        nbleaves++;
+        hc->nombre_feuilles++ ; // pas certain de ce que je fais ici, j'avais dit que je devais rajouter à nombre_feuilles si y'a feuille
+        return 1;
+    }
+    int t_left=hclustRec(hc, nbleaves,left);
+    int t_right = hclustRec(hc, nbleaves,right);
 
-//     if(t_left<t_right)
-//         return t_right+1;
-//     return t_left+1;
-// }
+    if(t_left<t_right)
+        return t_right+1;
+    return t_left+1;
+}
 
 int hclustDepth(Hclust *hc)
 {
@@ -322,17 +331,6 @@ void hclustPrintTree(FILE *fp, Hclust *hc)
     fprintf(fp, ";\n"); // finir le newick par un ";" dans l'exemple du cours
 }
 
-
-static bool Isleaves(Hclust *hc,BTNode node); // a copier coller ou il faut 
-
-bool Isleaves(Hclust *hc,BTNode node){
-    BTNode left = btLeft(hc->dendrogramme, node);
-    BTNode right = btRight(hc->dendrogramme, node);
-    if(!left&&!right){
-        return true;
-    return false;
-}
-//normalement cette fonction rajoute ton booleen
 
 
 
