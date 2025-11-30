@@ -9,7 +9,7 @@ typedef struct Hclust_t
 {
     BTree *dendrogramme;
     List *liste_distances_fusion; // à voir si on s'en sert
-    int nombre_objets;            // N
+    int nombre_feuilles;            // N
 } Hclust;
 typedef struct
 {
@@ -19,15 +19,27 @@ typedef struct
 
 } Paire;
 
+// j'ai fait une pitite fonction pour comparer les paires pour les trier par distance croissante
+static int comparePaires(void *a, void *b)
+{
+    Paire *pA = (Paire *)a;
+    Paire *pB = (Paire *)b;
+
+    if (pA->dist < pB->dist) return -1;
+    if (pA->dist > pB->dist) return 1;
+    return 0;
+}
+
+
 Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char *, void *), void *distFnParams)
 {
     // TODO
-    int n = llSize(objects);
+    int n = llLength(objects);
     if (n <= 1)
         return NULL; // vide
 
     BTree *dico_clusters = btCreate(); // ( nom_objet -> Sous-arbre du dendrogramme )
-    List *paires = llCreateEmpty();    // Liste de ( objet1, objet2, distance )
+    List *paires = llCreateEmpty();    // liste de ( objet1, objet2, distance )
     BTree *T_big;
     BTree *T_small;
 
@@ -35,8 +47,8 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
     {
         for (int j = i + 1; j < n; j++)
         {
-            char *o1 = (char *)llGet(objects, i);
-            char *o2 = (char *)llGet(objects, j);
+            char *o1 = NULL; // (char *)llGet(objects, i); // TODO : corriger ici : null comme placeholder
+            char *o2 = NULL; // (char *)llGet(objects, j); 
             double dist = distFn(o1, o2, distFnParams);
 
             Paire *p = malloc(sizeof(Paire));
@@ -59,7 +71,7 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
         // dicInsert(dico_clusters, obj, tree);
     }
     // fusion des clusters( tant qu'il n'y a pas k=1 cluster )
-    while (llSize(paires) > 0)
+    while (llLength(paires) > 0)
     {
         Paire *minPair = (Paire *)llData(paires); // paire la plus proche distance zéro je crois ? 
 
@@ -69,7 +81,7 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
 
         if (!T_o1 || !T_o2 || T_o1 == T_o2)
         {
-            llRemoveFirst(paires);
+            llPopFirst(paires);
             continue;
         }
         // un ordre précis avec T_big et T_small pour optimiser
@@ -91,31 +103,35 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
         btMergeTrees(T_big, T_small, distPtr); // j'ai changé avant ça menait a un segfault si on mettait la distance en brut
 
         // mettre à jour le dictionnaire
-        btMapLeaves(T_big, btRoot(T_small), updateClusterDict(), dico_clusters); // NB updateClusterDict n'est pas défini
+        
+        // TODO
 
         // supprimer la paire traitee
-        llRemoveFirst(paires);
+        llPopFirst(paires);
 
         // verifier si on a atteint 1 seul sous-arbre
-        if (llSize(dico_clusters) == 1)
+        if (llLength(dico_clusters) == 1)
             break;
     }
 
     // creer la structure Hclust a retourner
     Hclust *hc = malloc(sizeof(Hclust));
     hc->dendrogramme = T_big; // L'arbre final
-    hc->nombre_objets = n;
+    hc->nombre_feuilles = n;
     hc->liste_distances_fusion = paires;
-    dicFree(dico_clusters);
+    dictFree(dico_clusters);
     return hc;
 }
 
 static void collectLeaves(BTree *tree, BTNode *node, List *leaves)
 {
+
+    // TODO: pas certain que ça marche
     if (!node || !tree || !leaves)
         return; // safety
 
-    if (btIsExternal(tree, node))
+    // TODO: trouver condition pour dire que c'est une feuille 
+    if ("c-est feuille")
     {
         // c'est une feuille, on ajoute le nom de l'objet
         llInsertLast(leaves, btGetData(tree, node));
@@ -144,13 +160,13 @@ static void hclustGetClustersDistRec(BTree *dendrogramme, BTNode *node, double d
         return;
     }
 
-    // si la distance est <= au seuil --> c'est un cluster final
+    // si la distance est <= au seuil --> c'est un cluster du bon threshold
     if (node_distance <= distanceThreshold)
     {
         // lister toutes les feuilles de ce sous-arbre
         List *cluster = llCreateEmpty();
-        collectLeaves(dendrogramme, node, cluster); // TODO : fausse fonction
-        llInsertLast(clustersList, cluster);        // ajouter le cluster
+        collectLeaves(dendrogramme, node, cluster); 
+        llInsertLast(clustersList, cluster);        // ajouter le cluster à la liste
         return;
     }
     // Sinon, continuer la descente recursivement
@@ -164,7 +180,7 @@ static void hclustGetClustersDistRec(BTree *dendrogramme, BTNode *node, double d
 
 List *hclustGetClustersDist(Hclust *hc, double distanceThreshold)
 {
-
+    // TODO: overkill conditions d'arret, verif si je fais bien les choses
     if (!hc || !hc->dendrogramme)
         return NULL;
 
@@ -176,16 +192,20 @@ List *hclustGetClustersDist(Hclust *hc, double distanceThreshold)
 
 List *hclustGetClustersK(Hclust *hc, int k)
 {
+
+    // TODO :  plein de trucs ici sont mis comme si c'est du pseudo code. j'ai pas trouve ce qui fallait mettre en vrai, si tu peux m'aider
+
+
     List *clustersNodes = llCreateEmpty();
     llInsertFirst(clustersNodes, btRoot(hc->dendrogramme)); // on commence avec la racine (1 cluster)
-    // TODO
+    
     BTNode *maxNode;
-    while (llSize(clustersNodes) < k)
+    while (llLength(clustersNodes) < k)
     {
         // on cherche dans la liste le cluster qui a la plus grande distance ( le plus haut).
         maxNode = "cluster1dist">"cluster2dist" ? "cluster1" : "cluster2" ; // TODO  c'est du filler
 
-        // si feuille on retire
+        // si feuille on retire et on quitte la boucle
         if ("c-est feuille")
             break;
 
@@ -201,6 +221,7 @@ List *hclustGetClustersK(Hclust *hc, int k)
 
 BTree *hclustGetTree(Hclust *hc)
 {
+    // TODO :  je sais pas a quoi cette fonction sert
     return hc->dendrogramme;
 }
 
@@ -216,9 +237,20 @@ static int hclustDepthRec(Hclust *hc, int depth, BTNode *node) // node doit etre
     // TODO c'est du caca ce que j'ai fait je crois 
     BTNode *left = btLeft(hc->dendrogramme, node)   ;
     BTNode *right = btRight(hc->dendrogramme, node) ; 
-
-    return 1 + max(hclustDepthRec(hc,depth+1,left),hclustDepthRec(hc,depth+1,right));
+    if(!left && !right)hc->nombre_feuilles++; // rajouter 1 feuille à hc
+    int t_left = hclustDepthRec(hc,depth+1,left);
+    int t_right =  hclustDepthRec(hc,depth+1,right);
+    return 1 + (t_left >=t_right ? t_left: t_right);
 }
+        //
+    //      // 
+//      //      //
+        //
+        //
+        //
+
+// Tanguy elle fait quoi cette fonction  ? si c'est depth, regare l'implémentation juste au dessus
+// c'est plus court, nan ? Sinon si c'est compter les feuilles, va voir hclustnbleaves
 static int hclustRec(Hclust *hc, int *nbleaves ,BTNode *node)
 {
 
@@ -226,6 +258,7 @@ static int hclustRec(Hclust *hc, int *nbleaves ,BTNode *node)
     BTNode *right = btRight(hc->dendrogramme, node);
     if(!left&&!right){
         nbleaves++;
+        hc->nombre_feuilles++ ; // pas certain de ce que je fais ici, j'avais dit que je devais rajouter à nombre_feuilles si y'a feuille
         return 1;
     }
     int t_left=hclustRec(hc, nbleaves,left);
@@ -235,8 +268,10 @@ static int hclustRec(Hclust *hc, int *nbleaves ,BTNode *node)
         return t_right+1;
     return t_left+1;
 }
+
 int hclustDepth(Hclust *hc)
 {
+    // Fonction wrapper recursive pour connaitre la profondeur de hc. C'est une recursivite de base
     int depth = 0;
     BTNode *root = btRoot(hc->dendrogramme);
     if (!root)
@@ -246,20 +281,22 @@ int hclustDepth(Hclust *hc)
     return depth;
 }
 
-// normalement hclustrec gere les nb leaves aussi j'avais pas vu que il y avais un nombre d'objet
 int hclustNbLeaves(Hclust *hc)
 {
-    return hc->nombre_objets; // note : lors de la fabrication de hc on devra incrémenter nombre_objets
+    // pas se casser les pieds
+    return hc->nombre_feuilles; // note : lors de la fabrication de hc on devra incrémenter nombre_feuilles
 }
 
 void hclustPrintTreeRec(FILE *fp, BTree *tree, BTNode *node)
 {
     if ("c-est une feuille")
-    { // TODO : trouver la condition
+    { // TODO : trouver la condition pour dire que c'est une feuille
         fprintf(fp, "%s", (char *)btGetData(tree, node));
     }
     else
     {
+
+        // TODO : check que c'est bien comme ça qu'on fait un arbre 
         // autre cas que juste une feuille, on met les parenthèses qu'il faut aux bons endroits
         fprintf(fp, "(");
         hclustPrintTreeRec(fp, tree, btLeft(tree, node));
