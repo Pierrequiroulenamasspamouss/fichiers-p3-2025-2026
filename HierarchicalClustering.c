@@ -272,17 +272,17 @@ static int hclustDepthRec(Hclust *hc, int depth, BTNode *node) // node doit etre
 //     return t_left+1;
 // }
 
-// int hclustDepth(Hclust *hc)
-// {
-//     // Fonction wrapper recursive pour connaitre la profondeur de hc. C'est une recursivite de base
-//     int depth = 0;
-//     BTNode *root = btRoot(hc->dendrogramme);
-//     if (!root)
-//         return depth;
-//     int *nbleaves = 0;
-//     depth=hclustRec(hc,nbleaves,root);
-//     return depth;
-// }
+int hclustDepth(Hclust *hc)
+{
+    // Fonction wrapper recursive pour connaitre la profondeur de hc. C'est une recursivite de base
+    int depth = 0;
+    BTNode *root = btRoot(hc->dendrogramme);
+    if (!root)
+        return depth;
+    int *nbleaves = 0;
+    depth=hclustRec(hc,nbleaves,root);
+    return depth;
+}
 
 int hclustNbLeaves(Hclust *hc)
 {
@@ -333,5 +333,6 @@ bool Isleaves(Hclust *hc,BTNode node){
     return false;
 }
 //normalement cette fonction rajoute ton booleen
+
 
 
