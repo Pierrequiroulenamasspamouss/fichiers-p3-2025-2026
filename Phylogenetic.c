@@ -1,6 +1,6 @@
  #include <stdio.h>
 #include <stdlib.h>
-#include <math.h">
+#include <math.h>
 #include "Phylogenetic.h"
 // exactement le nombre de caractere utilisé dans main-feature
 #define MAXLINELENGTH 2000
@@ -91,3 +91,4 @@ Hclust *phyloTreeCreate(char *filename){
 
 // j'ai enlevé les sercurité pour y voir plus claire 
 // mais ca semblait etre que du copier coller :/ reverifie au cas ou 
+
