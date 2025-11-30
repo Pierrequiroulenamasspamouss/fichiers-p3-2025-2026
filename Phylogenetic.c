@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <math.h>
 #include "Phylogenetic.h"
+#include "Dict.h"
+
 // exactement le nombre de caractere utilisé dans main-feature
 #define MAXLINELENGTH 2000
 
@@ -16,17 +18,17 @@ double phyloDNADistance(char *dna1, char *dna2){
         longeur = strlen(dna2);
 
     for (unsigned long i = 0 ; i < longeur ; i++){
-        char a = dna1[i]
-        char b = dna2[i]
+        char a = dna1[i];
+        char b = dna2[i];
         if(a==b)
             continue;
-        if((a=='A'||b=='A') && (b=='G'||a=='G')){
+        if((a=='A'||b =='A') && (b=='G'||a=='G')){
             Q++ ;
             continue;
         }
-        if((a=='C'||b=='C') && (b=='T'||a=='T')){
+        if((a=='C'||b =='C') && (b=='T'||a=='T')){
             Q++;
-            continue
+            continue;
         }
         P++;
     }
@@ -80,7 +82,7 @@ Hclust *phyloTreeCreate(char *filename){
         }
         dictInsert(dicfeatures, objectName, featureVector);
     }
-    Hclust *hc = hclustBuildTree(names, phyloDNADistance, &pf);
+    Hclust *hc = hclustBuildTree(names, phyloDNADistance, fp);
     // free the memory
     dictFreeValues(nbInfo, free);
     llFreeData(names);
