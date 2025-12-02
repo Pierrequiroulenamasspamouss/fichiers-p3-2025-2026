@@ -30,13 +30,14 @@ static int comparePaires(Paire *a, Paire *b)
 
 static void updateClusterDict(BTree *tree, BTNode *node, Dict *dico, BTree *survivorTree)
 {
-    if (!node) return;
+    if (!node)
+        return;
 
     if (btIsExternal(tree, node))
     {
         char *key = (char *)btGetData(tree, node);
         // on met à jour la valeur dans le dico pour pointer vers l'arbre survivant
-        dictInsert(dico, key, survivorTree); 
+        dictInsert(dico, key, survivorTree);
     }
     else
     {
@@ -61,12 +62,12 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
 
     while (!noeud_A)
     {
-        while(!noeud_B)
+        while (!noeud_B)
         {
-            if(noeud_A==noeud_B)
+            if (noeud_A == noeud_B)
                 llNext(noeud_B);
             char *o1 = (char *)llData(noeud_A);
-            char *o2 = (char *)llData(noeud_B); 
+            char *o2 = (char *)llData(noeud_B);
             double dist = distFn(o1, o2, distFnParams);
 
             p->o1 = o1;
@@ -78,7 +79,7 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
         noeud_B = noeud_A;
         llNext(noeud_B);
     }
-    llSort(paires,comparePaires);
+    llSort(paires, comparePaires);
     // llSort(paires,strcmp);
     // tri des paires ( important pour efficacité je crois )
 
@@ -178,7 +179,7 @@ static void hclustGetClustersDistRec(BTree *dendrogramme, BTNode *node, double d
         return;
     }
     double *distPtr = (double *)btGetData(dendrogramme, node);
-    double node_distance = *distPtr;
+    node_distance = *distPtr;
 
     // si la distance est <= au seuil --> c'est un cluster du bon threshold
     if (node_distance <= distanceThreshold)
@@ -268,7 +269,7 @@ int hclustDepth(Hclust *hc)
     if (!root)
         return depth;
     int *nbleaves = 0;
-    depth = hclustRec(hc, nbleaves, root);
+    depth = hclustDepthRec(hc, nbleaves, root);
     return depth;
 }
 
@@ -304,8 +305,3 @@ void hclustPrintTree(FILE *fp, Hclust *hc)
     hclustPrintTreeRec(fp, hc->dendrogramme, btRoot(hc->dendrogramme));
     fprintf(fp, ";\n"); // finir le newick par un ";" dans l'exemple du cours
 }
-
-
-
-
-
