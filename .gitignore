@@ -1,3 +1,4 @@
 *.o
 hcphylo
 hcfeatures
+testing.c
