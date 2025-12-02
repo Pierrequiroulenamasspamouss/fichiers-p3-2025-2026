@@ -61,12 +61,12 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
 
     while (!noeud_A)
     {
-        while (!noeud_B)
+        while(!noeud_B)
         {
-            if (noeud_A == noeud_B)
+            if(noeud_A==noeud_B)
                 llNext(noeud_B);
             char *o1 = (char *)llData(noeud_A);
-            char *o2 = (char *)llData(noeud_B);
+            char *o2 = (char *)llData(noeud_B); 
             double dist = distFn(o1, o2, distFnParams);
 
             p->o1 = o1;
@@ -78,6 +78,8 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
         noeud_B = noeud_A;
         llNext(noeud_B);
     }
+    llSort(paires,comparePaires);
+    // llSort(paires,strcmp);
     // tri des paires ( important pour efficacité je crois )
 
     llSort(paires, comparePaires); // faire pour tous les éléments de paires ( le faire d'une façon smart)
@@ -302,3 +304,8 @@ void hclustPrintTree(FILE *fp, Hclust *hc)
     hclustPrintTreeRec(fp, hc->dendrogramme, btRoot(hc->dendrogramme));
     fprintf(fp, ";\n"); // finir le newick par un ";" dans l'exemple du cours
 }
+
+
+
+
+
