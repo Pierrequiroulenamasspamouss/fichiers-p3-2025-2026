@@ -64,3 +64,8 @@ ETAPES DE CALCUL :
 
 
 si tu te souviens c'était grosso modo ça, on fusionne et on réduit jusqu'à n'avoir qu'1 node 
+
+
+
+
+ceci est un test de pushing 
