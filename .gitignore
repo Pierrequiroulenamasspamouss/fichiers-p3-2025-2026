@@ -2,3 +2,5 @@
 hcphylo
 hcfeatures
 testing.c
+*.json
+settings.json

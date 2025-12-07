@@ -20,6 +20,13 @@ typedef struct
 
 } Paire;
 
+typedef struct
+{
+    Dict *dico;
+    BTree *T_big;
+    BTree *T_small;
+} val;
+
 static int comparePaires(void *a, void *b)
 {
     Paire *pa = (Paire *)a;
@@ -41,6 +48,11 @@ static void updateClusterDict(BTree *tree, BTNode *node, Dict *dico, BTree *surv
         char *key = (char *)btGetData(tree, node);
         // on met à jour la valeur dans le dico pour pointer vers l'arbre survivant
         dictInsert(dico, key, survivorTree);
+        // faut peut etre free l'encienne clef ? (rique d'insert plainte de cluster)
+        //sans toucher au inutile
+        // dictFreeValues(Dict *d, void (*freeData)(void *))
+        // pas sure PIERRE
+        // ou un truc du genre 
     }
     else
     {
@@ -49,12 +61,28 @@ static void updateClusterDict(BTree *tree, BTNode *node, Dict *dico, BTree *surv
         // cette partie de code me semble a la fois bizarre et bonne (elle peut etre source d'erreur dans notre cas)
         // il manque des securité qu'il a dit au cours mais... il en dit tellement  
         // la recursivité semble pas mal 
+        
     }
 }
+static void dic(void *data, void *fparams)
+{
+    val *values = (val *)fparams;
+    BTree *survivorTree = values->T_big;
+    Dict *dico = values->dico;
+    BTree *currentTree = values->T_small;
+    BTNode *currentNode = (BTNode *)data;
+   dictInsert(dico, (char *)btGetData(currentTree, currentNode), survivorTree);
+} // intellisens a ecrit ca tout seul dois je en avoir confia,nce XD ?? ?? je relirai ca 
 
 Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char *, void *), void *distFnParams)
 {
     // TODO
+    // les condtion limite :
+    // !!! quand on parcours la liste lié des distance et que 2 point sont dans lememe cluster on ne faait rien
+    // sinon on les lie (normalement deja pris en compte grace au dictionnaire )
+
+
+
     int n = llLength(objects);
     if (n <= 1)
         return NULL; // vide
@@ -87,13 +115,9 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
         noeud_B=noeud_A;
         llNext(noeud_A);
     }
+    //triage efficace 
     llSort(paires,comparePaires);
-    // llSort(paires,strcmp);
-    
-    // tri des paires ( important pour efficacité je crois )
-
-    // llSort(paires); // faire pour tous les éléments de paires ( le faire d'une façon smart)
-
+  
     // initialisation des clusters ( chaque objet est son propre cluster )
     noeud_A = llHead(paires);
     
@@ -108,16 +132,17 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
     // fusion des clusters( tant qu'il n'y a pas k=1 cluster )
     noeud_A = llHead(paires);
     while (llLength(paires) > 0)
+    // while(number_arbre>0)
     {
         Paire *minPair = (Paire *)llData(noeud_A); // paire la plus proche distance zéro je crois ? 
-        llNext(noeud_A); // PIERRE est ce NECESSAIRRE ? (ca vient de moi)
         // trouver les sous-arbres ( aka clusters ) des objets
         BTree *T_o1 = dictSearch(dico, minPair->o1);
         BTree *T_o2 = dictSearch(dico, minPair->o2);
 
-        if (!T_o1 || !T_o2 || T_o1 == T_o2)
+        if (!T_o1 || !T_o2 || T_o1 == T_o2) // arbre different (pris en compte ) OK
         {
             llPopFirst(paires);
+            llNext(noeud_A);
             continue;
         }
         // un ordre précis avec T_big et T_small pour optimiser
@@ -125,25 +150,39 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
         {
             T_big = T_o1;
             T_small = T_o2;
+
         }
         else
         {
             T_big = T_o2;
             T_small = T_o1;
+  
         };
 
         double *distPtr = malloc(sizeof(double));
 
         *distPtr = minPair->dist;
-        // fusionner
-        btMergeTrees(T_big, T_small, distPtr); // j'ai changé avant ça menait a un segfault si on mettait la distance en brut
+            val *values = malloc(sizeof(val));
+            values->dico=dico;
+            values->T_big=T_big;
+            values->T_small=T_small;
+            // je m'assure que tout les les element de big et tsmall et tbig pointe vers t
+            btMapLeaves(T_small,btRoot(T_small),dic,values);
+            // FAIT CHIER    je dois sauvegardé Tbif precedent j'espere que cette sauvegarde ne me coutera pas un malloc non opportun
+            BTree *T_temporaire= btCreate();
+            T_temporaire= T_small;
+            btMergeTrees(T_big, T_small, distPtr);
+            values->dico=dico;
+            values->T_big=T_big;
+            values->T_small=T_temporaire;
+            btMapLeaves(T_big,btRoot(T_big),dic,values);
+            btFree(T_temporaire);
+            free(values);
 
-        // mettre à jour le dictionnaire
-        updateClusterDict(T_small, btRoot(T_small), dico, T_big);
 
         // supprimer la paire traitee
         llPopFirst(paires);
-
+        llNext(noeud_A);
         // verifier si on a atteint 1 seul sous-arbre
         if (llLength(paires) == 1)
             break;
