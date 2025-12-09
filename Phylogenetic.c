@@ -55,6 +55,7 @@ Hclust *phyloTreeCreate(char *filename)
 {
     
     char buffer[MAXLINELENGTH];
+    char buffer2[MAXLINELENGTH];
     FILE *fp = fopen(filename, "r");
     fgets(buffer, MAXLINELENGTH, fp);
     int nbInfo = 2;
@@ -65,19 +66,32 @@ Hclust *phyloTreeCreate(char *filename)
 
     while (fgets(buffer, MAXLINELENGTH, fp))
     {
+        printf("1");
         int lenstr = strlen(buffer) - 1;
         buffer[lenstr] = '\0'; // replace \n with \0
 
         // jusqu'a le premier ',' (nom)
         int i = 0;
-        while (buffer[i] != ',')
+        while (buffer[i] != ','){
             i++;
-        buffer[i] = '\0';
-        
+            printf("2");
+        }
+        while(buffer[i]!='\n'){
+            printf("3");
+            buffer2[i]=buffer[i];
+            i++;
+        }
+        buffer2[i] = '\0';
+        buffer[i]= '\0';
+        strcpy(buffer, buffer2);
         // gestion du nom
         char *objectName = malloc((i + 1) * sizeof(char));
         strcpy(objectName, buffer);
         llInsertLast(names, objectName);
+
+        // char *objectDNA = malloc((i + 1) * sizeof(char));
+        // strcpy(objectDNA, buffer);
+        // llInsertLast(names, objectName);
         
         double *featureVector = malloc(nbInfo * sizeof(double));
         int pos = 0;
