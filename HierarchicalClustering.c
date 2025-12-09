@@ -47,21 +47,20 @@ static void dic(void *data, void *fparams)
     Dict *dico = values->dico;
     char *key = (char *)data;            // data est la clé (char*)
     dictInsert(dico, key, survivorTree); // Utiliser la clé directement
-} //@Tanguy c'est pas Intellisense c'est Copilot alors si tu as de l'autocomplete multi lignes
+}
 
 Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char *, void *), void *distFnParams)
 {
 
     int n = llLength(objects);
     if (n <= 1)
-        return NULL; // vide
+        return NULL;
     Dict *dico = dictCreate(llLength(objects));
     List *paires = llCreateEmpty(); // liste de ( objet1, objet2, distance )
     BTree *T_big = NULL;
     BTree *T_small = NULL;
     Node *noeud_A = llHead(objects);
 
-    // @Tanguy, ici il y avait un souci avec les pointeurs dans les while. c'est maintenant corrigé.
     while (noeud_A) // tant que noeud_A n'est pas NULL
 
     {
@@ -83,16 +82,15 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
             p->dist = dist;
             llInsertLast(paires, p);
 
-            noeud_B = llNext(noeud_B); // Avance B
+            noeud_B = llNext(noeud_B); 
         }
-        noeud_A = llNext(noeud_A); // Avance A
+        noeud_A = llNext(noeud_A); 
     }
 
     // triage efficace
     llSort(paires, comparePaires);
 
     // initialisation des clusters ( chaque objet est son propre cluster )
-    // @Tanguy j'ai aussi modif l'initialisation des clusters.
     Node *current_obj_node = llHead(objects);
     while (current_obj_node) // tant que l'objet n'est pas NULL
     {
@@ -116,9 +114,8 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
     // fusion des clusters( tant qu'il n'y a pas k=1 cluster )
     
     while (llLength(paires) > 0)
-
     {
-        Node *headNode = llHead(paires);            // CORRECTION : On utilise la head
+        Node *headNode = llHead(paires);
         Paire *minPair = (Paire *)llData(headNode); 
         // trouver les sous-arbres ( aka clusters ) des objets
         BTree *T_o1 = dictSearch(dico, minPair->o1);
@@ -126,7 +123,7 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
         if (!T_o1 || !T_o2 || T_o1 == T_o2) // arbre different (pris en compte ) OK
         {
             llPopFirst(paires);
-            free(minPair); // CORRECTION : libération de la paire
+            free(minPair);
             continue;
         }
 
@@ -150,29 +147,19 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
 
         // je m'assure que tout les les element de big et tsmall et tbig pointe vers t
 
-        btMapLeaves(T_small, btRoot(T_small), dic, values); // CORRECTION : Fonction 'dic' passée
-
-        // FAIT CHIER je dois sauvegarder Tbif precedent j'espere que cette sauvegarde ne me coutera pas un malloc non opportun
-        // @Tanguy non tkt pas de mallocs... J'ai changé c'est pas trop nécessaire.
-
+        btMapLeaves(T_small, btRoot(T_small), dic, values); 
         btMergeTrees(T_big, T_small, distPtr);
-
-        //@Tanguy y'a plus besoin :)
-
         free(values); // T_big est l'arbre final, T_small a été fusionné.
         // supprimer la paire traitee
         llPopFirst(paires);
-        free(minPair); // CORRECTION : on libère la paire après l'avoir pop @Tanguy
-        // verifier si on a atteint 1 seul sous-arbre
-        // if (dictGetNbKeys(dico) == n) // @Tanguy j'ai trouvé mieux : c'est plus nécessaire.
-        //     break;
+        free(minPair);
     }
     // creer la structure Hclust a retourner
     Hclust *hc = malloc(sizeof(Hclust));
     hc->dendrogramme = T_big; // L'arbre final
     hc->nombre_feuilles = n;
     hc->liste_distances_fusion = paires; // Garde la liste des paires (maintenant vide)
-    dictFree(dico);                      // ajout : il faut libérer le dico ici, plus besoin après
+    dictFree(dico);                      // ajout : il faut libérer le dico ici
     return hc;
 }
 
@@ -180,7 +167,7 @@ static void collectLeaves(BTree *tree, BTNode *node, List *leaves)
 {
 
     if (!node || !tree || !leaves)
-        return; // safety
+        return;
 
     if (btIsExternal(tree, node))
     {
@@ -198,7 +185,7 @@ static void collectLeaves(BTree *tree, BTNode *node, List *leaves)
 static void hclustGetClustersDistRec(BTree *dendrogramme, BTNode *node, double distanceThreshold, List *clustersList)
 {
     if (!node || !dendrogramme || !clustersList)
-        return; // safety first
+        return; 
 
     // correction : GetData sur feuille = char*, sur noeud = double*.
     // on check d'abord si externe ( aka si feuille )
@@ -437,7 +424,7 @@ static void hclustPrintTreeRec(FILE *fp, BTree *tree, BTNode *node, double paren
     double branchLength = parentHeight - currentHeight;
 
     
-    if (branchLength < 0) branchLength = 0; // safety si c'est negatif
+    if (branchLength < 0) branchLength = 0; // si c'est negatif
 
     if (btIsExternal(tree, node))
     {
