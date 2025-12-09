@@ -88,14 +88,6 @@ Hclust *phyloTreeCreate(char *filename)
         fprintf(stderr, "Error: Cannot open file %s\n", filename);
         return NULL;
     }
-
-    // passer si y'a un header, comme dans l'exemple
-    if (!fgets(buffer, MAXLINELENGTH, fp))
-    {
-        fclose(fp);
-        return NULL;
-    }
-
     List *names = llCreateEmpty();
     Dict *dicfeatures = dictCreate(1000);
 
