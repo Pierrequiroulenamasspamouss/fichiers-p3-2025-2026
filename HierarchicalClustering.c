@@ -71,8 +71,7 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
         while (noeud_B) // tant que noeud_B n'est pas NULL
 
         {
-            // j'ai aussi modifié pour les pointeurs  cette partie du code avec les différentes paires o1et o2
-            // on m'a dit de faire gaffe si dist(o1, o2) != dist(o2, o1) mais je crois pas que ce soit le cas.
+
             char *o2 = (char *)llData(noeud_B);
             double dist = distFn(o1, o2, distFnParams);
 
@@ -97,7 +96,7 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
         char *obj = (char *)llData(current_obj_node); // c'est un char*
         BTree *tree = btCreate();
 
-        // copie de la chaine de caractère ---
+        // copie de la chaine de caractère 
         // créer une racine pour l'arbre avec le nom de l'objet(feuille)
         // on doit maalloc pour que l'arbre possède sa propre donnée
         char *objCopy = malloc((strlen(obj) + 1) * sizeof(char)); // sinon garbage output
@@ -120,7 +119,7 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
         // trouver les sous-arbres ( aka clusters ) des objets
         BTree *T_o1 = dictSearch(dico, minPair->o1);
         BTree *T_o2 = dictSearch(dico, minPair->o2);
-        if (!T_o1 || !T_o2 || T_o1 == T_o2) // arbre different (pris en compte ) OK
+        if (!T_o1 || !T_o2 || T_o1 == T_o2) 
         {
             llPopFirst(paires);
             free(minPair);
@@ -156,10 +155,10 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
     }
     // creer la structure Hclust a retourner
     Hclust *hc = malloc(sizeof(Hclust));
-    hc->dendrogramme = T_big; // L'arbre final
+    hc->dendrogramme = T_big; // l'arbre final
     hc->nombre_feuilles = n;
-    hc->liste_distances_fusion = paires; // Garde la liste des paires (maintenant vide)
-    dictFree(dico);                      // ajout : il faut libérer le dico ici
+    hc->liste_distances_fusion = paires; 
+    dictFree(dico);                      // il faut libérer le dico ici
     return hc;
 }
 
@@ -187,7 +186,7 @@ static void hclustGetClustersDistRec(BTree *dendrogramme, BTNode *node, double d
     if (!node || !dendrogramme || !clustersList)
         return; 
 
-    // correction : GetData sur feuille = char*, sur noeud = double*.
+
     // on check d'abord si externe ( aka si feuille )
     if (btIsExternal(dendrogramme, node))
     {
@@ -200,7 +199,7 @@ static void hclustGetClustersDistRec(BTree *dendrogramme, BTNode *node, double d
     double *distPtr = (double *)btGetData(dendrogramme, node);
     double node_distance = *distPtr;
 
-    // si la distance est <= au seuil --> c'est un cluster du bon threshold
+    // si la distance est <= au seuil -> c'est un cluster du bon threshold
     if (node_distance <= distanceThreshold)
     {
         // lister toutes les feuilles de ce sous-arbre
@@ -235,7 +234,7 @@ List *hclustGetClustersK(Hclust *hc, int k)
         return NULL;
 
     List *clustersNodes = llCreateEmpty();
-    // on insère la racine (l'unique cluster initial)
+    // on insere la racine (l'unique cluster initial)
     llInsertFirst(clustersNodes, btRoot(hc->dendrogramme));
 
     // tant que le nombre de clusters est inférieur à k
@@ -254,7 +253,7 @@ List *hclustGetClustersK(Hclust *hc, int k)
             // on ne peut diviser que les noeuds internes
             if (btIsInternal(hc->dendrogramme, cluster))
             {
-                // la distance de fusion est stockée dans la data du noeud interne
+                // la distance de fusion est stockee dans la data du noeud interne
                 double *distPtr = (double *)btGetData(hc->dendrogramme, cluster);
                 double current_dist = *distPtr;
 
@@ -269,15 +268,14 @@ List *hclustGetClustersK(Hclust *hc, int k)
             current = llNext(current);
         }
 
-        // si on a trouvé aucun noeud interne (tous sont des feuilles) on peut pas diviser davantage.
+        // si on a trouve aucun noeud interne (tous sont des feuilles) on peut pas diviser davantage.
         if (maxNode == NULL)
             break;
 
-        // retirer le noeud parent trouvé de la liste des clusters
+        // retirer le noeud parent trouve de la liste des clusters
         if (nodeBeforeMax == NULL)
         {
-            // c'est la tête de liste
-            // llPopFirst gère la suppression du noeud, la mise à jour de la tête et de la longueur.
+            // c'est la tete de liste
             llPopFirst(clustersNodes); // Note : le retour est void*, ignoré ici
         }
         else
@@ -306,7 +304,7 @@ List *hclustGetClustersK(Hclust *hc, int k)
     }
 
     // conversion pointeur BTNode vers List de strings
-    // Le main veut une liste de listes de noms, pas une liste de noeuds d'arbre.
+
     List *finalList = llCreateEmpty();
     Node *curr = llHead(clustersNodes);
     while (curr)
@@ -330,7 +328,6 @@ static void hclustFreeDistancesRec(BTree *tree, BTNode *node)
     if (!node)
         return;
 
-    // IMPORTANT : nettoyage complet (double* ET char*) , avant le nettoyage était pas bon ce qui causait le double free
     hclustFreeDistancesRec(tree, btLeft(tree, node));
     hclustFreeDistancesRec(tree, btRight(tree, node));
 
@@ -354,22 +351,21 @@ void hclustFree(Hclust *hc)
     if (!hc || !hc->dendrogramme)
     {
         if (hc)
-            free(hc); // Sécurité
+            free(hc); // sécurité
         return;
     }
     hclustFreeDistancesRec(hc->dendrogramme, btRoot(hc->dendrogramme)); // libérer les double* ET les char*
-    btFree(hc->dendrogramme);                                           // libérer les noeuds BTNode*
+    btFree(hc->dendrogramme);                                           // libérer les noeuds 
 
-    // Sécurité pour la liste
+    // sécurité pour la liste
     if (hc->liste_distances_fusion)
         llFree(hc->liste_distances_fusion);
 
     free(hc);
 }
 
-static int hclustDepthRec(Hclust *hc, BTNode *node) // node doit etre un pointeur
+static int hclustDepthRec(Hclust *hc, BTNode *node) 
 {
-    // traitement des noeud pourris. Merci @Tanguy
     if (!node)
         return 0;
 
