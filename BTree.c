@@ -163,7 +163,7 @@ void btMapLeaves(BTree *tree, BTNode *n, void (*f)(void *data, void *fparams), v
   if (!n)
     return;
   if (!n->left && !n->right)
-    f(n, fparams);
+    f(n->data, fparams); // y'avait un souci ici , fallait passer n->data pas n-> left et ,n->right
   else
   {
     btMapLeaves(tree, n->left, f, fparams);
@@ -172,11 +172,26 @@ void btMapLeaves(BTree *tree, BTNode *n, void (*f)(void *data, void *fparams), v
 }
 
 void btMergeTrees(BTree *lefttree, BTree *righttree, void *data)
-
 {
+
   BTNode *newRac = createNode(data);
+
+  // connecter les anciennes racines
   newRac->left = lefttree->root;
   newRac->right = righttree->root;
+
+  // mettre à jour les parents des racines fusionnées
+  if (lefttree->root)
+    lefttree->root->parent = newRac;
+  if (righttree->root)
+    righttree->root->parent = newRac;
+
+  // mettre à jour la racine de lefttree
   lefttree->root = newRac;
-  btFree(righttree); // on a libéré celui de droite
+
+  // mettre à jour la taille du lefttree, la taille est la somme des tailles + 1 (pour newRac)
+  lefttree->size += righttree->size + 1;
+  righttree->root = NULL;
+  righttree->size = 0; // Sécurité
+  free(righttree);
 }

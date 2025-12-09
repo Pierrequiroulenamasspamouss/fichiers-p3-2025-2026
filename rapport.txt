@@ -62,10 +62,27 @@ ETAPES DE CALCUL :
       Vous utiliser btMapLeaves pour parcourir les feuilles du plus petit arbre et mettre à jour le Dictionnaire pour qu'elles pointent vers la nouvelle racine (le nouveau cluster fusionné)
     - Lorsque toutes les fusions sont faites (k=1), l'arbre binaire final (le dendrogramme) est stocké dans la structure Hclust
 
-
-si tu te souviens c'était grosso modo ça, on fusionne et on réduit jusqu'à n'avoir qu'1 node 
-
-
-
-
-ceci est un test de pushing 
+RESUME IA DES FONCTIONS:
+1. Structures et Fonctions Internes (Helpers)
+	Ces éléments ne sont pas accessibles depuis le main, ils servent à la "cuisine interne" du fichier.struct Hclust_t : La structure principale qui contient l'arbre complet (dendrogramme), la liste des distances (historique des fusions) et le nombre total de feuilles.
+    comparePaires : Fonction utilisée par llSort. Elle compare deux objets Paire selon leur distance. Retourne -1, 1 ou 0. Sert à trier toutes les paires possibles de la plus petite distance à la plus grande.
+    dic : Une fonction "callback" utilisée lors de la fusion. Quand on fusionne deux arbres, cette fonction met à jour le dictionnaire pour dire : "Attention, l'objet X fait maintenant partie du nouveau gros cluster fusionné".
+    collectLeaves : Parcourt récursivement un sous-arbre pour récupérer tous les noms (chaînes de caractères) situés dans les feuilles. C'est ce qui permet de transformer un nœud BTNode* en une liste d'animaux ("Lion", "Tigre", ...).
+    
+2. Construction de l'Arbre
+C'est le cœur de l'algorithme (Agglomerative Hierarchical Clustering).
+    hclustBuildTree 
+        Calcul : Calcule la distance entre chaque paire d'objets (complexité $O(N^2)$).
+        Tri : Trie ces paires de la plus petite distance à la plus grande.
+        Initialisation : Crée une forêt de petits arbres (chaque animal est une feuille isolée). On utilise un dictionnaire (Dict) pour retrouver rapidement l'arbre correspondant à un nom d'animal. C'est ici qu'on fait la copie (malloc) du nom.
+        Boucle de fusion : Prend la paire la plus proche (ex: Lion & Tigre).Vérifie dans le dictionnaire si ces animaux sont déjà dans le même arbre.Si non, on fusionne leurs deux arbres en un nouveau nœud parent. La donnée de ce parent est la distance de fusion.On met à jour le dictionnaire pour que tous les animaux du petit arbre pointent vers le nouveau grand arbre.Retourne la structure Hclust contenant l'arbre final.
+        
+3. Extraction de Clusters (Découpage de l'arbre)
+    Ces fonctions permettent de "couper" l'arbre pour obtenir des groupes.
+        hclustGetClustersDist (et son helper _Rec) :
+            But : Obtenir des clusters en coupant l'arbre à une certaine hauteur (distance seuil).
+            Fonctionnement : On descend dans l'arbre depuis la racine. Si la distance stockée dans un nœud est inférieure au seuil (distanceThreshold), on considère que tout ce qui est en dessous forme un cluster valide. On appelle collectLeaves pour récupérer les noms et on arrête de descendre. Sinon, on continue à descendre gauche/droite.
+        hclustGetClustersK :
+            But : Obtenir exactement K clusters.
+            Fonctionnement :On commence avec une liste contenant juste la racine (1 cluster).On cherche dans cette liste le cluster qui a la plus grande distance interne (celui qui a été fusionné le plus tard, donc le plus hétérogène). On "casse" ce cluster en le remplaçant par ses deux enfants (gauche et droite). On répète jusqu'à avoir exactement K éléments dans la liste.Finalement : On transforme cette liste de nœuds (BTNode*) en liste de noms (List de Strings) via collectLeaves pour que le main puisse l'afficher.
+        4. Gestion de la MémoireFonctions critiques pour éviter les fuites (Memory Leaks).hclustFree :Appelle d'abord hclustFreeDistancesRec pour vider le contenu des nœuds.Appelle ensuite btFree pour libérer la structure de l'arbre (les boîtes BTNode).Libère la liste des paires historiques.Libère enfin la structure Hclust.hclustFreeDistancesRec (Helper récursif) :Parcourt tout l'arbre.Si c'est un nœud interne : libère le double* (la distance).Si c'est une feuille : libère le char* (le nom de l'animal, que l'on a copié au début). C'était le point manquant qui causait le double free.5. Utilitaires et AffichagehclustGetTree : Simple "getter". Retourne le pointeur vers la racine de l'arbre.hclustDepth (et son helper _Rec) : Calcule la profondeur maximale de l'arbre (le nombre d'étages de la racine à la feuille la plus éloignée).hclustNbLeaves : Retourne simplement l'entier nombre_feuilles.hclustPrintTree (et son helper _Rec) :Affiche l'arbre dans la console (ou un fichier) au format Newick.Le format ressemble à : ((Chat:0.1, Chien:0.1):0.5, Oiseau:1.0);.Il utilise la récursivité pour ouvrir des parenthèses, afficher gauche, virgule, droite, fermer parenthèse, afficher la distance.

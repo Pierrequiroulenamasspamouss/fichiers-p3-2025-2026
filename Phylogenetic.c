@@ -27,15 +27,15 @@ double phyloDNADistance(char *dna1, char *dna2)
             continue;
         if ((a == 'A' || b == 'A') && (b == 'G' || a == 'G'))
         {
-            Q++;
+            P++;
             continue;
         }
         if ((a == 'C' || b == 'C') && (b == 'T' || a == 'T'))
         {
-            Q++;
+            P++;
             continue;
         }
-        P++;
+        Q++;
     }
 
     double distance = ((-1 / 2) * log(1 - 2 * P - Q)) - ((1 / 4) * log(1 - 2 * Q)); // log == ln ?
