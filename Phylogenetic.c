@@ -5,9 +5,14 @@
 #include "Phylogenetic.h"
 #include "Dict.h"
 
-// exactement le nombre de caractere utilisé dans main-feature
+// exactement le nombre de caractere utilisé dans maihclustBuildTreen-feature
 #define MAXLINELENGTH 2000
-
+static double jesépa( const char *aaa, const char *aaaa, void *prout)
+{  
+    printf("%d",(int)prout);
+    return  phyloDNADistance(aaa, aaaa);
+     
+}
 double phyloDNADistance(char *dna1, char *dna2)
 {
     unsigned long longeur = 0;
@@ -25,31 +30,36 @@ double phyloDNADistance(char *dna1, char *dna2)
         char b = dna2[i];
         if (a == b)
             continue;
+
         if ((a == 'A' || b == 'A') && (b == 'G' || a == 'G'))
         {
             P++;
             continue;
         }
+
         if ((a == 'C' || b == 'C') && (b == 'T' || a == 'T'))
         {
             P++;
             continue;
         }
+        
         Q++;
     }
 
     double distance = ((-1 / 2) * log(1 - 2 * P - Q)) - ((1 / 4) * log(1 - 2 * Q)); // log == ln ?
+        printf("%f\n",distance);
     return distance;
 }
 
 Hclust *phyloTreeCreate(char *filename)
 {
+    
     char buffer[MAXLINELENGTH];
     FILE *fp = fopen(filename, "r");
     fgets(buffer, MAXLINELENGTH, fp);
     int nbInfo = 2;
     // on nous le dit il y a 1 nom d'espece et un ADN s'aparé par une ',' donc 2 info par espece
-
+    
     List *names = llCreateEmpty();
     Dict *dicfeatures = dictCreate(1000);
 
@@ -63,12 +73,12 @@ Hclust *phyloTreeCreate(char *filename)
         while (buffer[i] != ',')
             i++;
         buffer[i] = '\0';
-
+        
         // gestion du nom
         char *objectName = malloc((i + 1) * sizeof(char));
         strcpy(objectName, buffer);
         llInsertLast(names, objectName);
-
+        
         double *featureVector = malloc(nbInfo * sizeof(double));
         int pos = 0;
         i++;
@@ -79,20 +89,21 @@ Hclust *phyloTreeCreate(char *filename)
             int j = i;
             while (j < lenstr && buffer[j] != ',')
                 j++;
+            
             if (buffer[j] == ',')
                 buffer[j] = '\0';
             featureVector[pos] = atof(buffer + i);
             pos++;
             i = j + 1;
         }
+        
         dictInsert(dicfeatures, objectName, featureVector);
     }
-    Hclust *hc = hclustBuildTree(names, phyloDNADistance, fp);
+    Hclust *hc = hclustBuildTree(names, jesépa, fp);
     // free the memory
-    dictFreeValues(nbInfo, free);
     llFreeData(names);
     fclose(fp);
-
+    
     return hc;
 }
 
