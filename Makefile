@@ -33,7 +33,7 @@ HierarchicalClustering.o: HierarchicalClustering.c Dict.h \
   HierarchicalClustering.h LinkedList.h BTree.h
 LinkedList.o: LinkedList.c LinkedList.h
 Phylogenetic.o: Phylogenetic.c LinkedList.h Dict.h Phylogenetic.h \
-  HierarchicalClustering.h BTree.h
+  HierarchicalClustering.h BTree.h 
 main_features.o: main_features.c Dict.h LinkedList.h BTree.h \
   HierarchicalClustering.h
 main_phylo.o: main_phylo.c Dict.h LinkedList.h BTree.h Phylogenetic.h \
