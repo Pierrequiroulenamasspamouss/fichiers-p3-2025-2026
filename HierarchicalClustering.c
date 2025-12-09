@@ -413,33 +413,67 @@ int hclustNbLeaves(Hclust *hc)
     // pas se casser les pieds
     return hc->nombre_feuilles;
 }
-
-static void hclustPrintTreeRec(FILE *fp, BTree *tree, BTNode *node)
+static double getNodeHeight(BTree *tree, BTNode *node)
 {
+    if (!node) return 0.0;
+    
+    // si c'est une feuille, sa hauteur est 0 (le présent)
+    if (btIsExternal(tree, node)) 
+        return 0.0;
+    
+    // si c'est un nœud interne, sa hauteur est dist / 2
+    double *d = (double *)btGetData(tree, node);
+    if (d)
+        return *d / 2.0;
+    
+    return 0.0;
+}
+static void hclustPrintTreeRec(FILE *fp, BTree *tree, BTNode *node, double parentHeight)
+{
+    if (!node) return;
+
+    // calculer la hauteur de ce nœud et la longueur de la branche qui y mène
+    double currentHeight = getNodeHeight(tree, node);
+    double branchLength = parentHeight - currentHeight;
+
+    
+    if (branchLength < 0) branchLength = 0; // safety si c'est negatif
+
     if (btIsExternal(tree, node))
     {
-        fprintf(fp, "%s", (char *)btGetData(tree, node));
+        fprintf(fp, "%s:%.3f", (char *)btGetData(tree, node), branchLength);
     }
     else
     {
-
+        // c'est un nœud interne
         fprintf(fp, "(");
-        hclustPrintTreeRec(fp, tree, btLeft(tree, node));
+        
+        // on descend à gauche 
+        hclustPrintTreeRec(fp, tree, btLeft(tree, node), currentHeight);
+        
         fprintf(fp, ",");
-        hclustPrintTreeRec(fp, tree, btRight(tree, node));
+        
+        // on descend à droite
+        hclustPrintTreeRec(fp, tree, btRight(tree, node), currentHeight);
+        
         fprintf(fp, ")");
 
-        // récupérer la distance
-        double *d = (double *)btGetData(tree, node); // cast en (double) parce que getData return void
-        if (d)
-            fprintf(fp, ":%.3f", *d);
+        // on affiche la longueur de la branche 
+        fprintf(fp, ":%.3f", branchLength);
     }
 }
 
 void hclustPrintTree(FILE *fp, Hclust *hc)
 {
     if (!hc || !hc->dendrogramme)
-        return; // safety first
-    hclustPrintTreeRec(fp, hc->dendrogramme, btRoot(hc->dendrogramme));
-    fprintf(fp, ";\n"); // finir le newick par un ";" dans l'exemple du cours
+        return; 
+
+    BTNode *root = btRoot(hc->dendrogramme);
+    
+    // la hauteur tout en haut de l'arbre
+    double rootHeight = getNodeHeight(hc->dendrogramme, root);
+
+    hclustPrintTreeRec(fp, hc->dendrogramme, root, rootHeight);
+    
+    fprintf(fp, ";\n");
 }

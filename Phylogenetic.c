@@ -5,117 +5,155 @@
 #include "Phylogenetic.h"
 #include "Dict.h"
 
-// exactement le nombre de caractere utilisé dans maihclustBuildTreen-feature
 #define MAXLINELENGTH 2000
-static double DnaDistanceWrapper(const char *dna1, const char *dna2, void *useless)
+
+typedef struct ParamFeatures_t
 {
+    Dict *dict;
+} ParamFeatures;
+
+// Wrapper to bridge the generic distance function with the specific DNA dictionary
+static double DnaDistanceWrapper(const char *name1, const char *name2, void *param)
+{
+    ParamFeatures *p = (ParamFeatures *)param;
+    char *dna1 = (char *)dictSearch(p->dict, name1);
+    char *dna2 = (char *)dictSearch(p->dict, name2);
+
+    // safety first
+    if (!dna1 || !dna2)
+        return 1.0;
+
     return phyloDNADistance(dna1, dna2);
 }
+
 double phyloDNADistance(char *dna1, char *dna2)
 {
-    printf("%s",dna1);
-    unsigned long longeur = 0;
-    int Transition = 0;
-    int Transversion = 0;
+    unsigned long longueur = 0;
+    double Transition = 0;
+    double Transversion = 0;
 
-    if (strlen(dna1) < strlen(dna2))
-        longeur = strlen(dna1);
+    // safety first
+    size_t len1 = strlen(dna1);
+    size_t len2 = strlen(dna2);
+
+    if (len1 < len2)
+        longueur = len1;
     else
-        longeur = strlen(dna2);
-    //printf("%lu\n", longeur);
+        longueur = len2;
 
-    for (unsigned long i = 0; i < longeur; i++)
+    for (unsigned long i = 0; i < longueur; i++)
     {
         char a = dna1[i];
         char b = dna2[i];
         if (a == b)
             continue;
 
-        if ((a == 'A' && b == 'G') || (b == 'A' && a == 'G') || (a == 'T' && b == 'C') || (b == 'T' && a == 'C'))
+        if ((a == 'A' && b == 'G') || (b == 'A' && a == 'G') ||
+            (a == 'T' && b == 'C') || (b == 'T' && a == 'C'))
         {
             Transition += 1;
-            continue;
         }
         else
-            Transversion++;
+        {
+            Transversion += 1;
+        }
     }
-    //printf(" %d\n", Transition);
 
-    //double distance = ((-1.0 / 2.0) * log(1 - 2.0 * P - Q)) - ((1.0 / 4.0) * log(1 - 2.0 * Q)); // log == ln ?
-    // printf("%f\n",distance);
-    return 0;//distance;
+    // calculer les proportions de P et Q parce que c'est important
+    double P = Transition / longueur;
+    double Q = Transversion / longueur;
+
+    // faire en plusieurs etapes plutot qu'un calcul
+    double terme1 = 1.0 - 2.0 * P - Q;
+    double terme2 = 1.0 - 2.0 * Q;
+
+    
+    if (terme1 <= 0.0000001)
+        terme1 = 0.0000001;
+    if (terme2 <= 0.0000001)
+        terme2 = 0.0000001;
+
+    double distance = -0.5 * log(terme1) - 0.25 * log(terme2);
+
+    // pas de distance negative
+    return (distance < 0) ? 0.0 : distance;
 }
 
 Hclust *phyloTreeCreate(char *filename)
 {
-
     char buffer[MAXLINELENGTH];
-    char buffer2[MAXLINELENGTH];
     FILE *fp = fopen(filename, "r");
-    fgets(buffer, MAXLINELENGTH, fp);
-    int nbInfo = 2;
-    // on nous le dit il y a 1 nom d'espece et un ADN s'aparé par une ',' donc 2 info par espece
+    if (!fp)
+    {
+        fprintf(stderr, "Error: Cannot open file %s\n", filename);
+        return NULL;
+    }
+
+    // passer si y'a un header, comme dans l'exemple
+    if (!fgets(buffer, MAXLINELENGTH, fp))
+    {
+        fclose(fp);
+        return NULL;
+    }
 
     List *names = llCreateEmpty();
     Dict *dicfeatures = dictCreate(1000);
 
     while (fgets(buffer, MAXLINELENGTH, fp))
     {
+        size_t lenstr = strlen(buffer);
+        // retirer les \n comme dans l'exemple
+        if (lenstr > 0 && buffer[lenstr - 1] == '\n')
+            buffer[--lenstr] = '\0';
 
-        int lenstr = strlen(buffer) - 1;
-        buffer[lenstr] = '\0'; // replace \n with \0
+        if (lenstr == 0)
+            continue; // si y'a des lignes vides
 
-        // jusqu'a le premier ',' (nom)
+        // extraire les noms
         int i = 0;
-        while (buffer[i] != ',')
-        {
+        while (buffer[i] != ',' && buffer[i] != '\0')
             i++;
-        }
-        while (buffer[i] != '\0')
-        {
 
-            buffer2[i] = buffer[i];
-            i++;
-        }
-        buffer2[i] = '\0';
-        buffer[i] = '\0';
-        strcpy(buffer, buffer2);
-        // gestion du nom
-        char *objectName = malloc((i + 1) * sizeof(char));
-        strcpy(objectName, buffer2);
+        buffer[i] = '\0'; // Cut string at the comma
+
+        char *objectName = malloc((strlen(buffer) + 1) * sizeof(char));
+        if (!objectName)
+            break;
+        strcpy(objectName, buffer);
+
         llInsertLast(names, objectName);
 
-        // char *objectDNA = malloc((i + 1) * sizeof(char));
-        // strcpy(objectDNA, buffer);
-        // llInsertLast(names, objectName);
-
-        double *featureVector = malloc(nbInfo * sizeof(double));
-        int pos = 0;
-        i++;
-        // la construction suivante est adapté a dictINseret que je n'ai pas ecrite
-        // elle doit surement etre juste
-        while (i < lenstr && pos < nbInfo)
+        // on extrait l'ADN
+        char *dnaSequence = NULL;
+        // check si y'ade l'ADN apres la virgule
+        if (i < (int)lenstr)
         {
-            int j = i;
-            while (j < lenstr && buffer[j] != ',')
-                j++;
-
-            if (buffer[j] == ',')
-                buffer[j] = '\0';
-            featureVector[pos] = atof(buffer + i);
-            pos++;
-            i = j + 1;
+            // buffer + i + 1 points apres la virgule
+            dnaSequence = malloc((strlen(buffer + i + 1) + 1) * sizeof(char));
+            if (dnaSequence)
+                strcpy(dnaSequence, buffer + i + 1);
+        }
+        else
+        {
+            // si y'a un souci avec le décodage
+            dnaSequence = malloc(sizeof(char));
+            if (dnaSequence)
+                *dnaSequence = '\0';
         }
 
-        dictInsert(dicfeatures, objectName, featureVector);
+        dictInsert(dicfeatures, objectName, dnaSequence);
     }
-   Hclust *hc = hclustBuildTree(names, DnaDistanceWrapper,buffer2);
-    // free the memory
-    llFreeData(names);
+
+    ParamFeatures parameters;
+    parameters.dict = dicfeatures;
+
+    printf("Construction of the phylogenetic tree\n");
+
+    Hclust *hc = hclustBuildTree(names, DnaDistanceWrapper, &parameters);
+
+    dictFreeValues(dicfeatures, free);
+    llFree(names);
+
     fclose(fp);
-    
     return hc;
 }
-
-// j'ai enlevé les sercurité pour y voir plus claire
-// mais ca semblait etre que du copier coller :/ reverifie au cas ou
