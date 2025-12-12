@@ -13,7 +13,6 @@ typedef struct ParamFeatures_t
     Dict *dict;
 } ParamFeatures;
 
-// Wrapper to bridge the generic distance function with the specific DNA dictionary
 static double DnaDistanceWrapper(const char *name1, const char *name2, void *param)
 {
     ParamFeatures *p = (ParamFeatures *)param;
