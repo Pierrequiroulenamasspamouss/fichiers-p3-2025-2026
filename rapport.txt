@@ -14,75 +14,29 @@ ChatGPT ou Copilot, etc.).
 Informations etudiants:
 =======================
 
-Etudiant 1: 
+Etudiant 1:
 Matricule: s2404824
 Nom: Sluse
 Prénom: Pierre
-Contribution au projet: btMapLeaves(), btMergeTrees(),hclustGetClustersDist+rec(), hclustBuildTree(),structs Hclust + paire -> 30%
+Contribution au projet: 50 %
 
-Etudiant 2: 
+Etudiant 2: (laissez vide si vous avez fait le projet seul)
 Matricule: s2404553
 Nom: Velazquez
 Prénom: Tanguy
-Contribution au projet: hclustdepth/rec 0.031415926535 %
+Contribution au projet: 50 %
 
-@Tanguy, quelques explications de ce que j'ai fait : Pseudocode -> code réel petit à petit, il y a des TODO à faire , et les lignes qui vont pas compiler sont 
-en commentaires (//)
-Les objets en listes liée (List):
-    -objets de départ (les noms des espèces d'ADN ou des points)
-    -résultats de clustering (une liste de listes de noms d'objets pour hclustGetClustersDist et hclustGetClustersK)
-    - liste pour des petits trucs
+Complexités:
+============
 
-Les objets en BTree ( 2 types : nodes, les éléments de l'arbre individuels, et les arbres)
-    NODES
-        - Feuille: objet unique (une espèce, un point) qui n'a pas été fusionné. La donnée stockée est le nom de l'objet (une chaîne de caractères).
-        - Noeud autre: fusion de ses deux sous-arbres (ses enfants). La donnée stockée est un pointeur vers un double contenant la distance entre les deux clusters "fusionnés"
-        ex : 
-        A - B - C
-            |
-            D
-        on a C et D qui sont des noeuds ( plus spécifiquement des feuilles) et A et B des noeuds autres 
-    TREES (Clusters):
-        Au début, chaque objet est son propre cluster, représenté par un binaryTree de 1 élément.
-        Lors de la fusion, la fonction btMergeTrees crée une nouvelle racine au-dessus des deux arbres (clusters) fusionnés, liant le nouveau cluster au dictionnaire.
-Les Dict (dans hclustBuildTree) -> Table de hachage
-    - Il maintient un suivi constant du cluster auquel appartient chaque objet initial
-    - Clé: Le nom de l'objet (e.g., 'a', 'b')
-    - Valeur: Le sous-arbre (BTree) qui représente le cluster auquel cet objet appartient à l'étape courante
-    - Cela permet de vérifier si deux objets (o1 et o2) appartiennent au même cluster (via la fonction dictSearch et comparaison des sous-arbres)
-    - Lors d'une fusion : on parcourt les feuilles du plus petit arbre fusionné (btMapLeaves) et on met à jour la valeur dans le dictionnaire pour que ces feuilles pointent vers la racine du nouveau cluster fusionné
+Donnez les complexités des fonctions suivantes (en fonction du nombre d'objets N et de K):
 
+hclustBuildTree: O(N*log(N))
+hclustGetClustersK: O(K*N)
 
-ETAPES DE CALCUL :
-    - calculer toutes les distances possibles (o1, o2) puis les trier par ordre croissant
-    - créer N arbres (clusters) de taille 1 (une feuille) et on va les insérer dans le Dictionnaire
-    - Fusion (Itération): prendre la paire d'objets (o1, o2) avec la plus petite distance non encore traitée
-      Utiliser le Dictionnaire(table de hachage) pour trouver les clusters T1 et T2 associés à o1 et o2.
-      Si T1 != T2, vous les fusionner en créant une nouvelle racine (distance) dans le plus grand des deux arbres (btMergeTrees)
-      Vous utiliser btMapLeaves pour parcourir les feuilles du plus petit arbre et mettre à jour le Dictionnaire pour qu'elles pointent vers la nouvelle racine (le nouveau cluster fusionné)
-    - Lorsque toutes les fusions sont faites (k=1), l'arbre binaire final (le dendrogramme) est stocké dans la structure Hclust
+Application:
+============
 
-RESUME IA DES FONCTIONS:
-1. Structures et Fonctions Internes (Helpers)
-	Ces éléments ne sont pas accessibles depuis le main, ils servent à la "cuisine interne" du fichier.struct Hclust_t : La structure principale qui contient l'arbre complet (dendrogramme), la liste des distances (historique des fusions) et le nombre total de feuilles.
-    comparePaires : Fonction utilisée par llSort. Elle compare deux objets Paire selon leur distance. Retourne -1, 1 ou 0. Sert à trier toutes les paires possibles de la plus petite distance à la plus grande.
-    dic : Une fonction "callback" utilisée lors de la fusion. Quand on fusionne deux arbres, cette fonction met à jour le dictionnaire pour dire : "Attention, l'objet X fait maintenant partie du nouveau gros cluster fusionné".
-    collectLeaves : Parcourt récursivement un sous-arbre pour récupérer tous les noms (chaînes de caractères) situés dans les feuilles. C'est ce qui permet de transformer un nœud BTNode* en une liste d'animaux ("Lion", "Tigre", ...).
-    
-2. Construction de l'Arbre
-C'est le cœur de l'algorithme (Agglomerative Hierarchical Clustering).
-    hclustBuildTree 
-        Calcul : Calcule la distance entre chaque paire d'objets (complexité $O(N^2)$).
-        Tri : Trie ces paires de la plus petite distance à la plus grande.
-        Initialisation : Crée une forêt de petits arbres (chaque animal est une feuille isolée). On utilise un dictionnaire (Dict) pour retrouver rapidement l'arbre correspondant à un nom d'animal. C'est ici qu'on fait la copie (malloc) du nom.
-        Boucle de fusion : Prend la paire la plus proche (ex: Lion & Tigre).Vérifie dans le dictionnaire si ces animaux sont déjà dans le même arbre.Si non, on fusionne leurs deux arbres en un nouveau nœud parent. La donnée de ce parent est la distance de fusion.On met à jour le dictionnaire pour que tous les animaux du petit arbre pointent vers le nouveau grand arbre.Retourne la structure Hclust contenant l'arbre final.
-        
-3. Extraction de Clusters (Découpage de l'arbre)
-    Ces fonctions permettent de "couper" l'arbre pour obtenir des groupes.
-        hclustGetClustersDist (et son helper _Rec) :
-            But : Obtenir des clusters en coupant l'arbre à une certaine hauteur (distance seuil).
-            Fonctionnement : On descend dans l'arbre depuis la racine. Si la distance stockée dans un nœud est inférieure au seuil (distanceThreshold), on considère que tout ce qui est en dessous forme un cluster valide. On appelle collectLeaves pour récupérer les noms et on arrête de descendre. Sinon, on continue à descendre gauche/droite.
-        hclustGetClustersK :
-            But : Obtenir exactement K clusters.
-            Fonctionnement :On commence avec une liste contenant juste la racine (1 cluster).On cherche dans cette liste le cluster qui a la plus grande distance interne (celui qui a été fusionné le plus tard, donc le plus hétérogène). On "casse" ce cluster en le remplaçant par ses deux enfants (gauche et droite). On répète jusqu'à avoir exactement K éléments dans la liste.Finalement : On transforme cette liste de nœuds (BTNode*) en liste de noms (List de Strings) via collectLeaves pour que le main puisse l'afficher.
-        4. Gestion de la MémoireFonctions critiques pour éviter les fuites (Memory Leaks).hclustFree :Appelle d'abord hclustFreeDistancesRec pour vider le contenu des nœuds.Appelle ensuite btFree pour libérer la structure de l'arbre (les boîtes BTNode).Libère la liste des paires historiques.Libère enfin la structure Hclust.hclustFreeDistancesRec (Helper récursif) :Parcourt tout l'arbre.Si c'est un nœud interne : libère le double* (la distance).Si c'est une feuille : libère le char* (le nom de l'animal, que l'on a copié au début). C'était le point manquant qui causait le double free.5. Utilitaires et AffichagehclustGetTree : Simple "getter". Retourne le pointeur vers la racine de l'arbre.hclustDepth (et son helper _Rec) : Calcule la profondeur maximale de l'arbre (le nombre d'étages de la racine à la feuille la plus éloignée).hclustNbLeaves : Retourne simplement l'entier nombre_feuilles.hclustPrintTree (et son helper _Rec) :Affiche l'arbre dans la console (ou un fichier) au format Newick.Le format ressemble à : ((Chat:0.1, Chien:0.1):0.5, Oiseau:1.0);.Il utilise la récursivité pour ouvrir des parenthèses, afficher gauche, virgule, droite, fermer parenthèse, afficher la distance.
+Quel est selon vous le type de la tumeur inconnue du fichier dna-breastcancer.csv (maligne ou bénigne) ? 
+
+Type: bénigne

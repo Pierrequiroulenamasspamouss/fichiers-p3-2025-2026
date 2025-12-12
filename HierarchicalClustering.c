@@ -41,7 +41,7 @@ static int comparePaires(void *a, void *b)
 
 static void dic(void *data, void *fparams)
 {
-
+    // fonction utile pour builtree
     val *values = (val *)fparams;
     BTree *survivorTree = values->T_big;
     Dict *dico = values->dico;
@@ -138,6 +138,7 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
             T_big = T_o2;
             T_small = T_o1;
         };
+        // malloc des valeurs utile pour btMapleaves et btMergeLeaves
         double *distPtr = malloc(sizeof(double));
         *distPtr = minPair->dist;
         val *values = malloc(sizeof(val));
@@ -159,7 +160,7 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
     hc->dendrogramme = T_big; // L'arbre final
     hc->nombre_feuilles = n;
     hc->liste_distances_fusion = paires; // Garde la liste des paires (maintenant vide)
-    dictFree(dico);                      // ajout : il faut libérer le dico ici
+    dictFree(dico);
     return hc;
 }
 
@@ -325,6 +326,7 @@ BTree *hclustGetTree(Hclust *hc)
 {
     return hc->dendrogramme;
 }
+
 static void hclustFreeDistancesRec(BTree *tree, BTNode *node)
 {
     if (!node)
@@ -369,7 +371,7 @@ void hclustFree(Hclust *hc)
 
 static int hclustDepthRec(Hclust *hc, BTNode *node) // node doit etre un pointeur
 {
-    // traitement des noeud pourris. Merci @Tanguy
+    // Traitement des noeud vide
     if (!node)
         return 0;
 
@@ -397,7 +399,6 @@ int hclustDepth(Hclust *hc)
 
 int hclustNbLeaves(Hclust *hc)
 {
-    // pas se casser les pieds
     return hc->nombre_feuilles;
 }
 static double getNodeHeight(BTree *tree, BTNode *node)

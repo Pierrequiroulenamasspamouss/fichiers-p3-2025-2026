@@ -163,7 +163,7 @@ void btMapLeaves(BTree *tree, BTNode *n, void (*f)(void *data, void *fparams), v
   if (!n)
     return;
   if (!n->left && !n->right)
-    f(n->data, fparams); // y'avait un souci ici , fallait passer n->data pas n-> left et ,n->right
+    f(n->data, fparams); 
   else
   {
     btMapLeaves(tree, n->left, f, fparams);
