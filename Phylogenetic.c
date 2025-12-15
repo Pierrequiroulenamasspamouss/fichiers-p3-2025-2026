@@ -7,6 +7,7 @@
 
 #define MAXLINELENGTH 2000
 
+// Meme idée que dans features creation d'un fparam (structure)
 typedef struct ParamFeatures_t
 {
     Dict *dict;
@@ -18,7 +19,7 @@ static double DnaDistanceWrapper(const char *name1, const char *name2, void *par
     char *dna1 = (char *)dictSearch(p->dict, name1);
     char *dna2 = (char *)dictSearch(p->dict, name2);
 
-    // safety first
+    
     if (!dna1 || !dna2)
         return 1.0;
 
@@ -39,13 +40,13 @@ double phyloDNADistance(char *dna1, char *dna2)
     else
         longueur = len2;
 
+    // Gestion de la proportion de transition et transversion.
     for (unsigned long i = 0; i < longueur; i++)
     {
         char a = dna1[i];
         char b = dna2[i];
         if (a == b)
             continue;
-
         if ((a == 'A' && b == 'G') || (b == 'A' && a == 'G') ||
             (a == 'T' && b == 'C') || (b == 'T' && a == 'C'))
         {
@@ -65,7 +66,7 @@ double phyloDNADistance(char *dna1, char *dna2)
     double terme1 = 1.0 - 2.0 * P - Q;
     double terme2 = 1.0 - 2.0 * Q;
 
-    
+    // eviter des ln(0)
     if (terme1 <= 0.0000001)
         terme1 = 0.0000001;
     if (terme2 <= 0.0000001)
@@ -77,6 +78,7 @@ double phyloDNADistance(char *dna1, char *dna2)
     return (distance < 0) ? 0.0 : distance;
 }
 
+// copie casi conforme de features exepté la gestion des dicos et des distances a la fin 
 Hclust *phyloTreeCreate(char *filename)
 {
     char buffer[MAXLINELENGTH];
@@ -133,7 +135,7 @@ Hclust *phyloTreeCreate(char *filename)
 
         dictInsert(dicfeatures, objectName, dnaSequence);
     }
-
+    // Initialisation des valeurs necessaires a Builtree
     ParamFeatures parameters;
     parameters.dict = dicfeatures;
 
