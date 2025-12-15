@@ -81,9 +81,9 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
             p->dist = dist;
             llInsertLast(paires, p);
 
-            noeud_B = llNext(noeud_B); 
+            noeud_B = llNext(noeud_B);
         }
-        noeud_A = llNext(noeud_A); 
+        noeud_A = llNext(noeud_A);
     }
 
     // triage efficace
@@ -96,7 +96,7 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
         char *obj = (char *)llData(current_obj_node); // c'est un char*
         BTree *tree = btCreate();
 
-        // copie de la chaine de caractère 
+        // copie de la chaine de caractère
         // créer une racine pour l'arbre avec le nom de l'objet(feuille)
         // on doit maalloc pour que l'arbre possède sa propre donnée
         char *objCopy = malloc((strlen(obj) + 1) * sizeof(char)); // sinon garbage output
@@ -111,15 +111,15 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
     }
 
     // fusion des clusters( tant qu'il n'y a pas k=1 cluster )
-    
+
     while (llLength(paires) > 0)
     {
         Node *headNode = llHead(paires);
-        Paire *minPair = (Paire *)llData(headNode); 
+        Paire *minPair = (Paire *)llData(headNode);
         // trouver les sous-arbres ( aka clusters ) des objets
         BTree *T_o1 = dictSearch(dico, minPair->o1);
         BTree *T_o2 = dictSearch(dico, minPair->o2);
-        if (!T_o1 || !T_o2 || T_o1 == T_o2) 
+        if (!T_o1 || !T_o2 || T_o1 == T_o2)
         {
             llPopFirst(paires);
             free(minPair);
@@ -146,7 +146,7 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
 
         // je m'assure que tout les les element de big et tsmall et tbig pointe vers t
 
-        btMapLeaves(T_small, btRoot(T_small), dic, values); 
+        btMapLeaves(T_small, btRoot(T_small), dic, values);
         btMergeTrees(T_big, T_small, distPtr);
         free(values); // T_big est l'arbre final, T_small a été fusionné.
         // supprimer la paire traitee
@@ -157,8 +157,8 @@ Hclust *hclustBuildTree(List *objects, double (*distFn)(const char *, const char
     Hclust *hc = malloc(sizeof(Hclust));
     hc->dendrogramme = T_big; // l'arbre final
     hc->nombre_feuilles = n;
-    hc->liste_distances_fusion = paires; 
-    dictFree(dico);                      // il faut libérer le dico ici
+    hc->liste_distances_fusion = paires;
+    dictFree(dico); // il faut libérer le dico ici
     return hc;
 }
 
@@ -184,8 +184,7 @@ static void collectLeaves(BTree *tree, BTNode *node, List *leaves)
 static void hclustGetClustersDistRec(BTree *dendrogramme, BTNode *node, double distanceThreshold, List *clustersList)
 {
     if (!node || !dendrogramme || !clustersList)
-        return; 
-
+        return;
 
     // on check d'abord si externe ( aka si feuille )
     if (btIsExternal(dendrogramme, node))
@@ -355,7 +354,7 @@ void hclustFree(Hclust *hc)
         return;
     }
     hclustFreeDistancesRec(hc->dendrogramme, btRoot(hc->dendrogramme)); // libérer les double* ET les char*
-    btFree(hc->dendrogramme);                                           // libérer les noeuds 
+    btFree(hc->dendrogramme);                                           // libérer les noeuds
 
     // sécurité pour la liste
     if (hc->liste_distances_fusion)
@@ -364,31 +363,35 @@ void hclustFree(Hclust *hc)
     free(hc);
 }
 
-static int hclustDepthRec(Hclust *hc, BTNode *node) 
+static int hclustDepthRec(Hclust *hc, BTNode *node)
 {
     if (!node)
         return 0;
 
+    // condition d'arret
+    if (btIsExternal(hc->dendrogramme, node))
+        return 0;
+
     BTNode *left = btLeft(hc->dendrogramme, node);
     BTNode *right = btRight(hc->dendrogramme, node);
-    if (!left && !right)
-        return 1;
+
     int t_left = hclustDepthRec(hc, left);
     int t_right = hclustDepthRec(hc, right);
+
+    // on ajoute 1 pour l'arête
     return 1 + (t_left >= t_right ? t_left : t_right);
 }
 
 int hclustDepth(Hclust *hc)
 {
-    // fonction wrapper recursive pour connaitre la profondeur de hc. C'est une recursivite de base
-    int depth = 0;
     if (!hc || !hc->dendrogramme)
-        return 0; // sécurité ajoutée
+        return 0;
+
     BTNode *root = btRoot(hc->dendrogramme);
     if (!root)
-        return depth;
-    depth = hclustDepthRec(hc, root);
-    return depth;
+        return 0;
+
+    return hclustDepthRec(hc, root);
 }
 
 int hclustNbLeaves(Hclust *hc)
@@ -398,65 +401,70 @@ int hclustNbLeaves(Hclust *hc)
 }
 static double getNodeHeight(BTree *tree, BTNode *node)
 {
-    if (!node) return 0.0;
-    
-    // si c'est une feuille, sa hauteur est 0 (le présent)
-    if (btIsExternal(tree, node)) 
+    if (!node)
         return 0.0;
-    
-    // si c'est un nœud interne, sa hauteur est dist / 2
+
+    // si c'est une feuille -> height =0
+    if (btIsExternal(tree, node))
+        return 0.0;
+
+    // si c'est un nœud interne
     double *d = (double *)btGetData(tree, node);
     if (d)
-        return *d / 2.0;
-    
+        return *d; 
+
     return 0.0;
 }
-static void hclustPrintTreeRec(FILE *fp, BTree *tree, BTNode *node, double parentHeight)
-{
-    if (!node) return;
 
-    // calculer la hauteur de ce nœud et la longueur de la branche qui y mène
+static void hclustPrintTreeRec(FILE *fp, BTree *tree, BTNode *node, double parentHeight, int isRoot)
+{
+    // securite 1
+    if (!node)
+        return;
+
     double currentHeight = getNodeHeight(tree, node);
     double branchLength = parentHeight - currentHeight;
 
-    
-    if (branchLength < 0) branchLength = 0; // si c'est negatif
+    // securite 2
+    if (branchLength < 0)
+        branchLength = 0;
 
     if (btIsExternal(tree, node))
     {
-        fprintf(fp, "%s:%.3f", (char *)btGetData(tree, node), branchLength);
+        // juste une feuille affiche sa longueur
+        fprintf(fp, "%s:%f", (char *)btGetData(tree, node), branchLength);
     }
     else
     {
-        // c'est un nœud interne
         fprintf(fp, "(");
-        
-        // on descend à gauche 
-        hclustPrintTreeRec(fp, tree, btLeft(tree, node), currentHeight);
-        
+
+        // appels récursifs
+        hclustPrintTreeRec(fp, tree, btLeft(tree, node), currentHeight, 0);
+
         fprintf(fp, ",");
-        
-        // on descend à droite
-        hclustPrintTreeRec(fp, tree, btRight(tree, node), currentHeight);
-        
+
+        hclustPrintTreeRec(fp, tree, btRight(tree, node), currentHeight, 0);
+
         fprintf(fp, ")");
 
-        // on affiche la longueur de la branche 
-        fprintf(fp, ":%.3f", branchLength);
+        // on n'affiche la longueur partout sauf à root
+        if (!isRoot)
+        {
+            fprintf(fp, ":%f", branchLength);
+        }
     }
 }
 
 void hclustPrintTree(FILE *fp, Hclust *hc)
 {
     if (!hc || !hc->dendrogramme)
-        return; 
+        return;
 
     BTNode *root = btRoot(hc->dendrogramme);
-    
-    // la hauteur tout en haut de l'arbre
     double rootHeight = getNodeHeight(hc->dendrogramme, root);
 
-    hclustPrintTreeRec(fp, hc->dendrogramme, root, rootHeight);
-    
+    // on appelle la récursion en précisant que c'est la root
+    hclustPrintTreeRec(fp, hc->dendrogramme, root, rootHeight, 1);
+
     fprintf(fp, ";\n");
 }
