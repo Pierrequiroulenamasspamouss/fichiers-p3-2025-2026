@@ -31,8 +31,8 @@ Complexités:
 
 Donnez les complexités des fonctions suivantes (en fonction du nombre d'objets N et de K):
 
-hclustBuildTree: O(N*log(N))
-hclustGetClustersK: O(K*N)
+hclustBuildTree: O(N^2*log(n))
+hclustGetClustersK: O(K^2+N)
 
 Application:
 ============
