@@ -20,7 +20,7 @@ static double DnaDistanceWrapper(const char *name1, const char *name2, void *par
     char *dna1 = (char *)dictSearch(p->dict, name1);
     char *dna2 = (char *)dictSearch(p->dict, name2);
 
-    
+    // Securité,on renvoie 1 par default en cas de chaine null
     if (!dna1 || !dna2)
         return 1.0;
 
