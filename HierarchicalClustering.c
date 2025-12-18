@@ -41,7 +41,8 @@ static int comparePaires(void *a, void *b)
 
 static void dic(void *data, void *fparams)
 {
-    // fonction utile pour builtree
+    // fonction utile pour hclustBuildTree
+    // suite a la creation d'une structure contenant nos elements utiles 
     val *values = (val *)fparams;
     BTree *survivorTree = values->T_big;
     Dict *dico = values->dico;
@@ -371,7 +372,7 @@ static int hclustDepthRec(Hclust *hc, BTNode *node)
     if (!node)
         return 0;
 
-    // condition d'arret
+    // condition d'arret return un 0 pour les feuilles
     if (btIsExternal(hc->dendrogramme, node))
         return 0;
 

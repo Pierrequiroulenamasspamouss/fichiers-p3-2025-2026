@@ -13,6 +13,7 @@ typedef struct ParamFeatures_t
     Dict *dict;
 } ParamFeatures;
 
+// Fonction utile pour utuilisé hclustBuildTree avec notre structure 
 static double DnaDistanceWrapper(const char *name1, const char *name2, void *param)
 {
     ParamFeatures *p = (ParamFeatures *)param;
@@ -35,6 +36,7 @@ double phyloDNADistance(char *dna1, char *dna2)
     size_t len1 = strlen(dna1);
     size_t len2 = strlen(dna2);
 
+    // Gestion des longueurs (choix de la plus petite)
     if (len1 < len2)
         longueur = len1;
     else
@@ -58,7 +60,7 @@ double phyloDNADistance(char *dna1, char *dna2)
         }
     }
 
-    // calculer les proportions de P et Q parce que c'est important
+    // calculer les proportions de P et Q 
     double P = Transition / longueur;
     double Q = Transversion / longueur;
 
@@ -141,11 +143,12 @@ Hclust *phyloTreeCreate(char *filename)
 
     printf("Construction of the phylogenetic tree\n");
 
+    // appel a hclustBuildTree avec notre structure et notre fonctions 
     Hclust *hc = hclustBuildTree(names, DnaDistanceWrapper, &parameters);
 
+    // FREE/fermeture des donnée utilisé
     dictFreeValues(dicfeatures, free);
     llFree(names);
-
     fclose(fp);
     return hc;
 }

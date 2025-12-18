@@ -162,6 +162,7 @@ void btMapLeaves(BTree *tree, BTNode *n, void (*f)(void *data, void *fparams), v
   // s'il y a un souci avec N
   if (!n)
     return;
+  // Application de la fonction a chaque noeud sans enfants
   if (!n->left && !n->right)
     f(n->data, fparams); 
   else
@@ -193,5 +194,6 @@ void btMergeTrees(BTree *lefttree, BTree *righttree, void *data)
   lefttree->size += righttree->size + 1;
   righttree->root = NULL;
   righttree->size = 0; // Sécurité
+  // suppresion de l'abre de droite comme annoncé dans l'enoncé
   free(righttree);
 }
